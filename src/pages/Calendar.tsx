@@ -91,14 +91,24 @@ const Calendar = () => {
 
             {/* View tabs (Day/Week) */}
             <div className="flex justify-end">
-              <TabsList>
-                <TabsTrigger value="day" onClick={() => setView("day")}>
+              <div className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                <Button
+                  variant={view === "day" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setView("day")}
+                  className="rounded-sm px-3"
+                >
                   Jour
-                </TabsTrigger>
-                <TabsTrigger value="week" onClick={() => setView("week")}>
+                </Button>
+                <Button
+                  variant={view === "week" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setView("week")}
+                  className="rounded-sm px-3"
+                >
                   Semaine
-                </TabsTrigger>
-              </TabsList>
+                </Button>
+              </div>
             </div>
 
             {/* Calendar views */}
