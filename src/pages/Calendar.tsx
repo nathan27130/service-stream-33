@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon } from "lucide-react";
 import CalendarDayView from "@/components/calendar/CalendarDayView";
 import CalendarWeekView from "@/components/calendar/CalendarWeekView";
+import CalendarMonthView from "@/components/calendar/CalendarMonthView";
 import CalendarActions from "@/components/calendar/CalendarActions";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -15,7 +16,7 @@ const Calendar = () => {
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [view, setView] = useState<"day" | "week">("day");
+  const [view, setView] = useState<"day" | "week" | "month">("day");
 
   useEffect(() => {
     loadServices();
@@ -89,7 +90,7 @@ const Calendar = () => {
               ))}
             </TabsList>
 
-            {/* View tabs (Day/Week) */}
+            {/* View tabs (Day/Week/Month) */}
             <div className="flex justify-end">
               <div className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                 <Button
@@ -107,6 +108,14 @@ const Calendar = () => {
                   className="rounded-sm px-3"
                 >
                   Semaine
+                </Button>
+                <Button
+                  variant={view === "month" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setView("month")}
+                  className="rounded-sm px-3"
+                >
+                  Mois
                 </Button>
               </div>
             </div>
@@ -138,8 +147,14 @@ const Calendar = () => {
                         selectedDate={selectedDate}
                         onDateChange={setSelectedDate}
                       />
-                    ) : (
+                    ) : view === "week" ? (
                       <CalendarWeekView
+                        serviceId={service.id}
+                        selectedDate={selectedDate}
+                        onDateChange={setSelectedDate}
+                      />
+                    ) : (
+                      <CalendarMonthView
                         serviceId={service.id}
                         selectedDate={selectedDate}
                         onDateChange={setSelectedDate}
