@@ -10,6 +10,7 @@ import {
 import { Download, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CalendarActionsProps {
   serviceId: string;
@@ -23,21 +24,63 @@ const CalendarActions = ({ serviceId, serviceName, selectedDate }: CalendarActio
     window.open(`/print/planning?service=${serviceId}&week=${weekParam}`, "_blank");
   };
 
-  const handleExportICal = () => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const icalUrl = `${supabaseUrl}/functions/v1/ical-export?service=${serviceId}`;
-    
-    // Copy URL to clipboard
-    navigator.clipboard.writeText(icalUrl);
-    toast.success("URL iCal copiée dans le presse-papier");
+  const handleExportICal = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Vous devez être connecté pour exporter le calendrier");
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const icalUrl = `${supabaseUrl}/functions/v1/ical-export?service=${serviceId}&token=${session.access_token}`;
+      
+      // Copy authenticated URL to clipboard
+      navigator.clipboard.writeText(icalUrl);
+      toast.success("URL iCal sécurisée copiée dans le presse-papier");
+    } catch (error) {
+      console.error("Export iCal error:", error);
+      toast.error("Erreur lors de l'export du calendrier");
+    }
   };
 
-  const handleDownloadICal = () => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const icalUrl = `${supabaseUrl}/functions/v1/ical-export?service=${serviceId}`;
-    
-    // Download the file
-    window.open(icalUrl, "_blank");
+  const handleDownloadICal = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Vous devez être connecté pour télécharger le calendrier");
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const icalUrl = `${supabaseUrl}/functions/v1/ical-export?service=${serviceId}`;
+      
+      // Fetch with authentication
+      const response = await fetch(icalUrl, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Échec du téléchargement");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `calendar-${serviceName}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success("Calendrier téléchargé avec succès");
+    } catch (error) {
+      console.error("Download iCal error:", error);
+      toast.error("Erreur lors du téléchargement du calendrier");
+    }
   };
 
   return (

@@ -12,6 +12,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.warn("iCal export attempt without authentication");
+      return new Response("Authentication required", {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
     const url = new URL(req.url);
     const serviceId = url.searchParams.get("service");
 
@@ -32,13 +42,55 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client with user's JWT token
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    // Fetch orders for the service
-    const { data: orders, error } = await supabase
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.warn("Invalid authentication token for iCal export");
+      return new Response("Invalid authentication", {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
+    // Check user's role and service access
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+
+    const isAdmin = roles?.some(r => r.role === "admin");
+    const isReadonly = roles?.some(r => r.role === "readonly");
+
+    // If not admin or readonly, verify user has access to this specific service
+    if (!isAdmin && !isReadonly) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("service_id")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.service_id !== serviceId) {
+        console.warn(`User ${user.id} attempted to access service ${serviceId} without permission`);
+        return new Response("Access denied to this service", {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "text/plain" },
+        });
+      }
+    }
+
+    // Use service role key only for fetching data after authentication
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch orders for the service using service role key
+    const { data: orders, error } = await supabaseService
       .from("orders")
       .select(`
         id,
