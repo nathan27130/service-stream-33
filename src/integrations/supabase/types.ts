@@ -17,6 +17,7 @@ export type Database = {
       customers: {
         Row: {
           created_at: string | null
+          default_address: string | null
           email: string | null
           id: string
           name: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          default_address?: string | null
           email?: string | null
           id?: string
           name: string
@@ -33,6 +35,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          default_address?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -82,6 +85,7 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          attachments: string[] | null
           created_at: string | null
           created_by: string | null
           customer_id: string | null
@@ -97,6 +101,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          attachments?: string[] | null
           created_at?: string | null
           created_by?: string | null
           customer_id?: string | null
@@ -112,6 +117,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          attachments?: string[] | null
           created_at?: string | null
           created_by?: string | null
           customer_id?: string | null
@@ -233,6 +239,41 @@ export type Database = {
           type?: Database["public"]["Enums"]["service_type"]
         }
         Relationships: []
+      }
+      templates: {
+        Row: {
+          created_at: string | null
+          default_service_id: string | null
+          id: string
+          items_json: Json
+          template_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_service_id?: string | null
+          id?: string
+          items_json: Json
+          template_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_service_id?: string | null
+          id?: string
+          items_json?: Json
+          template_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_default_service_id_fkey"
+            columns: ["default_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
