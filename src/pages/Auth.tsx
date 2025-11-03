@@ -63,7 +63,12 @@ const Auth = () => {
         });
         
         if (!error && data) {
-          setIsFirstUser(!data.exists);
+          const isFirst = !data.exists;
+          setIsFirstUser(isFirst);
+          // Force signup mode for first user (no accounts exist yet)
+          if (isFirst) {
+            setIsLogin(false);
+          }
         }
       } catch (error) {
         console.error("Error checking first user:", error);
