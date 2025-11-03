@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import OrderDetailsDialog from "@/components/orders/OrderDetailsDialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CalendarWeekViewProps {
@@ -17,6 +18,8 @@ interface CalendarWeekViewProps {
 const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWeekViewProps) => {
   const [orders, setOrders] = useState<any[]>([]);
   const [draggedOrder, setDraggedOrder] = useState<any>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const weekStart = startOfWeek(selectedDate, { locale: fr });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -219,7 +222,11 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
                         key={order.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, order)}
-                        className={`p-2 cursor-move hover:shadow-md transition-all text-xs border-l-2 ${getStatusColor(order.status)}`}
+                        onClick={() => {
+                          setSelectedOrderId(order.id);
+                          setDetailsDialogOpen(true);
+                        }}
+                        className={`p-2 cursor-pointer hover:shadow-md transition-all text-xs border-l-2 ${getStatusColor(order.status)}`}
                       >
                         <div className="space-y-1">
                           <div className="font-semibold truncate">
@@ -246,6 +253,12 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
           );
         })}
       </div>
+
+      <OrderDetailsDialog
+        orderId={selectedOrderId}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
     </div>
   );
 };

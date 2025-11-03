@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import OrderDetailsDialog from "@/components/orders/OrderDetailsDialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CalendarMonthViewProps {
@@ -17,6 +18,8 @@ interface CalendarMonthViewProps {
 const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMonthViewProps) => {
   const [orders, setOrders] = useState<any[]>([]);
   const [draggedOrder, setDraggedOrder] = useState<any>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
@@ -234,7 +237,11 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
                           key={order.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, order)}
-                          className={`p-1 cursor-move hover:shadow-sm transition-all text-[10px] border-l-2 ${getStatusColor(order.status)}`}
+                          onClick={() => {
+                            setSelectedOrderId(order.id);
+                            setDetailsDialogOpen(true);
+                          }}
+                          className={`p-1 cursor-pointer hover:shadow-sm transition-all text-[10px] border-l-2 ${getStatusColor(order.status)}`}
                         >
                           <div className="space-y-0.5">
                             <div className="font-semibold truncate">
@@ -264,6 +271,12 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
           })}
         </div>
       </div>
+
+      <OrderDetailsDialog
+        orderId={selectedOrderId}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
     </div>
   );
 };

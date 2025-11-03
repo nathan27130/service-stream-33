@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import MainLayout from "@/components/layout/MainLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import { ClipboardList, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OrderStatusBadge from "@/components/orders/OrderStatusBadge";
+import OrderDetailsDialog from "@/components/orders/OrderDetailsDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const { userRole, serviceId, hasRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -22,6 +21,8 @@ const Dashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (userRole) {
@@ -175,7 +176,10 @@ const Dashboard = () => {
                     <div
                       key={order.id}
                       className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/orders/${order.id}`)}
+                      onClick={() => {
+                        setSelectedOrderId(order.id);
+                        setDetailsDialogOpen(true);
+                      }}
                     >
                       <div className="flex items-center gap-4">
                         <div
@@ -200,6 +204,12 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+
+      <OrderDetailsDialog
+        orderId={selectedOrderId}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
     </MainLayout>
   );
 };

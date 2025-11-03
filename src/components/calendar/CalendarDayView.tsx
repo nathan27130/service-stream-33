@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import OrderStatusBadge from "@/components/orders/OrderStatusBadge";
+import OrderDetailsDialog from "@/components/orders/OrderDetailsDialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +20,8 @@ const CalendarDayView = ({ serviceId, selectedDate, onDateChange }: CalendarDayV
   const [orders, setOrders] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, done: 0, remaining: 0 });
   const [draggedOrder, setDraggedOrder] = useState<any>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -212,7 +215,11 @@ const CalendarDayView = ({ serviceId, selectedDate, onDateChange }: CalendarDayV
                       key={order.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, order)}
-                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 ${getStatusColor(order.status)}`}
+                      onClick={() => {
+                        setSelectedOrderId(order.id);
+                        setDetailsDialogOpen(true);
+                      }}
+                      className={`p-3 cursor-pointer hover:shadow-md transition-all border-l-4 ${getStatusColor(order.status)}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -243,6 +250,12 @@ const CalendarDayView = ({ serviceId, selectedDate, onDateChange }: CalendarDayV
           );
         })}
       </div>
+
+      <OrderDetailsDialog
+        orderId={selectedOrderId}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
     </div>
   );
 };
