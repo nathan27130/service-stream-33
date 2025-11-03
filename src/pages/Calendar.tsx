@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon } from "lucide-react";
 import CalendarDayView from "@/components/calendar/CalendarDayView";
 import CalendarWeekView from "@/components/calendar/CalendarWeekView";
+import CalendarActions from "@/components/calendar/CalendarActions";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Calendar = () => {
@@ -105,13 +106,20 @@ const Calendar = () => {
               <TabsContent key={service.id} value={service.id} className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: service.color }}
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: service.color }}
+                        />
+                        Agenda {service.name}
+                      </CardTitle>
+                      <CalendarActions
+                        serviceId={service.id}
+                        serviceName={service.name}
+                        selectedDate={selectedDate}
                       />
-                      Agenda {service.name}
-                    </CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {view === "day" ? (

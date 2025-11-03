@@ -12,6 +12,8 @@ import Management from "./pages/Management";
 import Products from "./pages/Products";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import PrintOrder from "./pages/PrintOrder";
+import PrintPlanning from "./pages/PrintPlanning";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +73,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/print/order" 
+              element={
+                <ProtectedRoute>
+                  <PrintOrder />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/print/planning" 
+              element={
+                <ProtectedRoute>
+                  <PrintPlanning />
                 </ProtectedRoute>
               } 
             />

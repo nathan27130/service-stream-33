@@ -131,8 +131,7 @@ const OrdersTable = ({ orders, onRefresh, onEdit }: OrdersTableProps) => {
   };
 
   const handlePrint = (order: any) => {
-    // TODO: Implement print functionality
-    toast.info("Impression en cours...");
+    window.open(`/print/order?id=${order.id}`, "_blank");
   };
 
   const getPriorityColor = (priority: string) => {

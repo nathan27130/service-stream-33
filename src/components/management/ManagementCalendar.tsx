@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,14 +83,37 @@ const ManagementCalendar = ({ orders, services }: ManagementCalendarProps) => {
       {/* Filters and Navigation */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePreviousWeek}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handlePreviousWeek}
+            title="Semaine précédente"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-[200px] text-center font-semibold">
             {format(weekStart, "d MMM", { locale: fr })} - {format(weekEnd, "d MMM yyyy", { locale: fr })}
           </div>
-          <Button variant="outline" size="icon" onClick={handleNextWeek}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleNextWeek}
+            title="Semaine suivante"
+          >
             <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const weekParam = currentWeek.toISOString().split("T")[0];
+              window.open(`/print/planning?week=${weekParam}`, "_blank");
+            }}
+            className="ml-4"
+            title="Imprimer le planning"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimer
           </Button>
         </div>
 
