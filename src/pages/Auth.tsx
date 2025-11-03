@@ -7,6 +7,31 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  fullName: z.string()
+    .trim()
+    .min(1, "Le nom complet est requis")
+    .max(100, "Le nom ne peut pas dépasser 100 caractères")
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Le nom ne peut contenir que des lettres, espaces, apostrophes et tirets"),
+  email: z.string()
+    .trim()
+    .email("Format d'email invalide")
+    .max(255, "L'email ne peut pas dépasser 255 caractères"),
+  password: z.string()
+    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+    .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
+    .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
+    .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
+    .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial"),
+  companyCode: z.string().min(1, "Le code d'entreprise est requis")
+});
+
+const loginSchema = z.object({
+  email: z.string().trim().email("Format d'email invalide"),
+  password: z.string().min(1, "Le mot de passe est requis")
+});
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -34,28 +59,50 @@ const Auth = () => {
 
     try {
       if (isLogin) {
+        // Validate login
+        const loginValidation = loginSchema.safeParse({ email, password });
+        if (!loginValidation.success) {
+          toast.error(loginValidation.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: loginValidation.data.email,
+          password: loginValidation.data.password,
         });
 
         if (error) throw error;
         toast.success("Connexion réussie !");
         navigate("/");
       } else {
+        // Validate signup
+        const signupValidation = signupSchema.safeParse({
+          fullName,
+          email,
+          password,
+          companyCode
+        });
+        
+        if (!signupValidation.success) {
+          toast.error(signupValidation.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
+
         // Vérifier le code d'entreprise
-        if (companyCode !== "Pm2flr?%") {
+        if (signupValidation.data.companyCode !== "Pm2flr?%") {
           toast.error("Code d'entreprise invalide");
           setLoading(false);
           return;
         }
 
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: signupValidation.data.email,
+          password: signupValidation.data.password,
           options: {
             data: {
-              full_name: fullName,
+              full_name: signupValidation.data.fullName,
             },
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -135,8 +182,13 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={isLogin ? 1 : 8}
               />
+              {!isLogin && (
+                <p className="text-xs text-muted-foreground">
+                  8+ caractères avec majuscule, minuscule, chiffre et caractère spécial
+                </p>
+              )}
             </div>
 
             <Button

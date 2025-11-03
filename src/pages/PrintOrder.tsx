@@ -3,12 +3,16 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import OrderSlip from "@/components/print/OrderSlip";
 import { Loader2 } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const PrintOrder = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("id");
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
 
   useEffect(() => {
     if (orderId) {
@@ -18,6 +22,21 @@ const PrintOrder = () => {
 
   const loadOrder = async () => {
     try {
+      // Get current user and their role
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (roleData) {
+          setUserRole(roleData.role);
+        }
+      }
+
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -58,7 +77,7 @@ const PrintOrder = () => {
     );
   }
 
-  return <OrderSlip order={order} />;
+  return <OrderSlip order={order} isAdmin={userRole === "admin"} />;
 };
 
 export default PrintOrder;

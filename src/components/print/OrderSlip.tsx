@@ -3,9 +3,10 @@ import { fr } from "date-fns/locale";
 
 interface OrderSlipProps {
   order: any;
+  isAdmin?: boolean;
 }
 
-const OrderSlip = ({ order }: OrderSlipProps) => {
+const OrderSlip = ({ order, isAdmin = false }: OrderSlipProps) => {
   return (
     <div className="print-only max-w-4xl mx-auto p-8 bg-white text-black">
       <style>
@@ -44,8 +45,8 @@ const OrderSlip = ({ order }: OrderSlipProps) => {
         <div>
           <h2 className="text-lg font-bold mb-2">Client</h2>
           <p className="font-semibold text-lg">{order.customers?.name || "Non spécifié"}</p>
-          {order.customers?.phone && <p>Tél: {order.customers.phone}</p>}
-          {order.customers?.email && <p>Email: {order.customers.email}</p>}
+          {isAdmin && order.customers?.phone && <p>Tél: {order.customers.phone}</p>}
+          {isAdmin && order.customers?.email && <p>Email: {order.customers.email}</p>}
         </div>
         <div>
           <h2 className="text-lg font-bold mb-2">Livraison</h2>
