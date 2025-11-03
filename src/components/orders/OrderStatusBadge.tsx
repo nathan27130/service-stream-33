@@ -9,19 +9,19 @@ const OrderStatusBadge = ({ status }: OrderStatusBadgeProps) => {
   const statusConfig = {
     a_faire: {
       label: "À faire",
-      className: "bg-muted text-muted-foreground hover:bg-muted",
+      className: "bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400",
     },
     en_cours: {
       label: "En cours",
-      className: "bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400",
+      className: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400",
     },
     pret: {
       label: "Prêt",
-      className: "bg-commande-light text-commande hover:bg-commande-light",
+      className: "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400",
     },
     livre: {
       label: "Livré",
-      className: "bg-boutique-light text-boutique hover:bg-boutique-light",
+      className: "bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-900/30 dark:text-gray-400",
     },
     annule: {
       label: "Annulé",

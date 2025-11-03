@@ -137,10 +137,10 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "a_faire": return "bg-muted border-muted-foreground/20";
-      case "en_cours": return "bg-orange-500/10 border-orange-500";
-      case "pret": return "bg-commande/10 border-commande";
-      case "livre": return "bg-boutique/10 border-boutique";
+      case "a_faire": return "bg-red-500/10 border-red-500";
+      case "en_cours": return "bg-yellow-500/10 border-yellow-500";
+      case "pret": return "bg-green-500/10 border-green-500";
+      case "livre": return "bg-gray-500/10 border-gray-500";
       case "annule": return "bg-destructive/10 border-destructive";
       default: return "bg-muted";
     }
