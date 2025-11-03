@@ -16,7 +16,17 @@ Deno.serve(async (req) => {
     const serviceId = url.searchParams.get("service");
 
     if (!serviceId) {
-      return new Response("Service ID required", {
+      return new Response("Invalid request", {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
+    // Validate UUID format to prevent enumeration attacks
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(serviceId)) {
+      console.warn(`Invalid UUID format attempted: ${serviceId.substring(0, 8)}...`);
+      return new Response("Invalid request", {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "text/plain" },
       });
