@@ -6,12 +6,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import OrderStatusBadge from "./OrderStatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Clock, User, Phone, Mail, Package, FileText, AlertCircle } from "lucide-react";
+import { MapPin, Clock, User, Phone, Mail, Package, FileText, AlertCircle, CheckCircle2, PlayCircle, ClockIcon } from "lucide-react";
+import { toast } from "sonner";
+
+type OrderStatus = Database["public"]["Enums"]["order_status"];
 
 interface OrderDetailsDialogProps {
   orderId: string | null;
@@ -51,6 +56,25 @@ const OrderDetailsDialog = ({ orderId, open, onOpenChange }: OrderDetailsDialogP
       console.error("Error loading order details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (newStatus: OrderStatus) => {
+    if (!orderId) return;
+
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      toast.success("Statut de la commande mis à jour");
+      loadOrderDetails();
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast.error("Erreur lors de la mise à jour du statut");
     }
   };
 
@@ -250,6 +274,50 @@ const OrderDetailsDialog = ({ orderId, open, onOpenChange }: OrderDetailsDialogP
                 {format(new Date(order.updated_at), "d MMM yyyy 'à' HH:mm", { locale: fr })}
               </div>
             )}
+          </div>
+
+          {/* Status Update Buttons */}
+          <Separator />
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm">Changer le statut</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={order.status === "a_faire" ? "default" : "outline"}
+                size="sm"
+                onClick={() => updateOrderStatus("a_faire")}
+                className="flex items-center gap-2"
+              >
+                <ClockIcon className="h-4 w-4" />
+                À faire
+              </Button>
+              <Button
+                variant={order.status === "en_cours" ? "default" : "outline"}
+                size="sm"
+                onClick={() => updateOrderStatus("en_cours")}
+                className="flex items-center gap-2"
+              >
+                <PlayCircle className="h-4 w-4" />
+                En cours
+              </Button>
+              <Button
+                variant={order.status === "pret" ? "default" : "outline"}
+                size="sm"
+                onClick={() => updateOrderStatus("pret")}
+                className="flex items-center gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Prêt
+              </Button>
+              <Button
+                variant={order.status === "livre" ? "default" : "outline"}
+                size="sm"
+                onClick={() => updateOrderStatus("livre")}
+                className="flex items-center gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Livré
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
