@@ -11,7 +11,6 @@ import {
   BarChart3
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -22,13 +21,22 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { userRole, hasRole } = useAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Déconnexion réussie");
-    navigate("/auth");
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error("Erreur lors de la déconnexion");
+        console.error("Logout error:", error);
+        return;
+      }
+      toast.success("Déconnexion réussie");
+      // La redirection est gérée automatiquement par onAuthStateChange dans Index.tsx
+    } catch (error) {
+      toast.error("Erreur lors de la déconnexion");
+      console.error("Logout error:", error);
+    }
   };
 
   const navItems = [
