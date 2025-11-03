@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,12 +8,15 @@ import {
   LogOut,
   ClipboardList,
   Package,
-  BarChart3
+  BarChart3,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -22,6 +25,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const { userRole, hasRole } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -80,18 +84,39 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-card">
+      <aside 
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300",
+          isCollapsed ? "w-16" : "w-64"
+        )}
+      >
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex flex-col border-b border-border px-6 py-4">
-            <h1 className="text-xl font-bold text-foreground">
-              Commandes Services
-            </h1>
-            {userRole && (
-              <Badge className={`mt-2 w-fit ${getRoleBadgeColor(userRole)}`}>
-                {getRoleLabel(userRole)}
-              </Badge>
+          {/* Logo & Toggle */}
+          <div className="flex items-center justify-between border-b border-border px-4 py-4">
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <h1 className="text-xl font-bold text-foreground">
+                  Commandes Services
+                </h1>
+                {userRole && (
+                  <Badge className={`mt-2 w-fit ${getRoleBadgeColor(userRole)}`}>
+                    {getRoleLabel(userRole)}
+                  </Badge>
+                )}
+              </div>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={cn("h-8 w-8", isCollapsed && "mx-auto")}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
           </div>
 
           {/* Navigation */}
@@ -107,10 +132,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 <Link key={item.path} to={item.path}>
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-3"
+                    className={cn(
+                      "w-full gap-3",
+                      isCollapsed ? "justify-center px-2" : "justify-start"
+                    )}
+                    title={isCollapsed ? item.label : undefined}
                   >
-                    <Icon className="h-5 w-5" />
-                    {item.label}
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!isCollapsed && <span>{item.label}</span>}
                   </Button>
                 </Link>
               );
@@ -121,18 +150,27 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           <div className="border-t border-border p-3">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className={cn(
+                "w-full gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive",
+                isCollapsed ? "justify-center px-2" : "justify-start"
+              )}
               onClick={handleLogout}
+              title={isCollapsed ? "Déconnexion" : undefined}
             >
-              <LogOut className="h-5 w-5" />
-              Déconnexion
+              <LogOut className="h-5 w-5 flex-shrink-0" />
+              {!isCollapsed && <span>Déconnexion</span>}
             </Button>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="pl-64">
+      <main 
+        className={cn(
+          "transition-all duration-300",
+          isCollapsed ? "pl-16" : "pl-64"
+        )}
+      >
         <div className="p-8">
           {children}
         </div>
