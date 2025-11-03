@@ -199,9 +199,34 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
 
       if (orderError) throw orderError;
 
-      // Create order items
+      // Create order items and add new products to catalog
       const validItems = orderItems.filter(item => item.product_name);
       if (validItems.length > 0) {
+        // First, add any new products to the products catalog
+        for (const item of validItems) {
+          const productExists = products.some(
+            p => p.name.toLowerCase() === item.product_name.toLowerCase()
+          );
+          
+          if (!productExists) {
+            const { error: productError } = await supabase
+              .from("products")
+              .insert([{
+                name: item.product_name,
+                unit: item.unit,
+                active: true
+              }]);
+            
+            if (productError) {
+              console.error("Error creating product:", productError);
+              // Continue anyway, don't block the order creation
+            } else {
+              console.log(`New product added to catalog: ${item.product_name}`);
+            }
+          }
+        }
+
+        // Then create the order items
         const itemsToInsert = validItems.map(item => ({
           order_id: orderData.id,
           product_name: item.product_name,
@@ -217,7 +242,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         if (itemsError) throw itemsError;
       }
 
-      toast.success("Commande créée avec succès !");
+      toast.success("Commande créée avec succès ! Les nouveaux produits ont été ajoutés au catalogue.");
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
