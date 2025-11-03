@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OrderStatusBadge from "@/components/orders/OrderStatusBadge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { userRole, serviceId, hasRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
@@ -22,32 +24,37 @@ const Dashboard = () => {
   const [services, setServices] = useState<any[]>([]);
 
   useEffect(() => {
-    checkAuth();
-    loadData();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
+    if (userRole) {
+      loadData();
     }
-  };
+  }, [userRole, serviceId]);
 
   const loadData = async () => {
     try {
-      // Load services
-      const { data: servicesData } = await supabase
+      // Load services (all for admin, specific for service users)
+      let servicesQuery = supabase
         .from("services")
         .select("*")
         .eq("active", true);
       
+      if (hasRole("service") && serviceId) {
+        servicesQuery = servicesQuery.eq("id", serviceId);
+      }
+      
+      const { data: servicesData } = await servicesQuery;
       if (servicesData) setServices(servicesData);
 
-      // Load orders stats
-      const { data: ordersData } = await supabase
+      // Load orders - filtered by service if service role
+      let ordersQuery = supabase
         .from("orders")
         .select("*")
         .order("created_at", { ascending: false });
+
+      if (hasRole("service") && serviceId) {
+        ordersQuery = ordersQuery.eq("service_id", serviceId);
+      }
+
+      const { data: ordersData } = await ordersQuery;
 
       if (ordersData) {
         setStats({
@@ -58,7 +65,7 @@ const Dashboard = () => {
         });
 
         // Get recent orders with customer and service info
-        const { data: recentData } = await supabase
+        let recentQuery = supabase
           .from("orders")
           .select(`
             *,
@@ -68,6 +75,11 @@ const Dashboard = () => {
           .order("created_at", { ascending: false })
           .limit(5);
 
+        if (hasRole("service") && serviceId) {
+          recentQuery = recentQuery.eq("service_id", serviceId);
+        }
+
+        const { data: recentData } = await recentQuery;
         if (recentData) setRecentOrders(recentData);
       }
     } catch (error) {

@@ -13,6 +13,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -21,6 +23,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { userRole, hasRole } = useAuth();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -29,13 +32,39 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   };
 
   const navItems = [
-    { path: "/", icon: LayoutDashboard, label: "Tableau de bord" },
-    { path: "/orders", icon: ClipboardList, label: "Commandes" },
-    { path: "/calendar", icon: Calendar, label: "Agenda" },
-    { path: "/products", icon: Package, label: "Produits" },
-    { path: "/reports", icon: BarChart3, label: "Rapports" },
-    { path: "/settings", icon: Settings, label: "Paramètres" },
+    { path: "/", icon: LayoutDashboard, label: "Tableau de bord", roles: ["admin", "service", "readonly"] },
+    { path: "/orders", icon: ClipboardList, label: "Commandes", roles: ["admin", "service"] },
+    { path: "/calendar", icon: Calendar, label: "Agenda", roles: ["admin", "service"] },
+    { path: "/products", icon: Package, label: "Produits", roles: ["admin"] },
+    { path: "/reports", icon: BarChart3, label: "Rapports", roles: ["admin", "service", "readonly"] },
+    { path: "/settings", icon: Settings, label: "Paramètres", roles: ["admin"] },
   ];
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "bg-cuisine text-white";
+      case "service":
+        return "bg-commande text-white";
+      case "readonly":
+        return "bg-muted text-muted-foreground";
+      default:
+        return "bg-muted";
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "Admin";
+      case "service":
+        return "Service";
+      case "readonly":
+        return "Lecture";
+      default:
+        return role;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,10 +72,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-card">
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center border-b border-border px-6">
+          <div className="flex flex-col border-b border-border px-6 py-4">
             <h1 className="text-xl font-bold text-foreground">
               Commandes Services
             </h1>
+            {userRole && (
+              <Badge className={`mt-2 w-fit ${getRoleBadgeColor(userRole)}`}>
+                {getRoleLabel(userRole)}
+              </Badge>
+            )}
           </div>
 
           {/* Navigation */}
@@ -54,6 +88,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              const hasAccess = userRole && item.roles.includes(userRole);
+              
+              if (!hasAccess) return null;
               
               return (
                 <Link key={item.path} to={item.path}>
