@@ -25,17 +25,19 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      // Utiliser scope: 'local' pour nettoyer la session locale sans appeler le serveur
+      // Cela évite les erreurs si la session a déjà expiré côté serveur
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) {
-        toast.error("Erreur lors de la déconnexion");
         console.error("Logout error:", error);
-        return;
       }
       toast.success("Déconnexion réussie");
       // La redirection est gérée automatiquement par onAuthStateChange dans Index.tsx
     } catch (error) {
-      toast.error("Erreur lors de la déconnexion");
       console.error("Logout error:", error);
+      toast.success("Déconnexion réussie");
+      // Même en cas d'erreur, on considère la déconnexion comme réussie
+      // car la session locale sera nettoyée
     }
   };
 
