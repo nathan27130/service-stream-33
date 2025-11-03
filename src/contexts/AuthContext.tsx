@@ -59,24 +59,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserRole = async (userId: string) => {
     try {
       // Get user role
-      const { data: roleData } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
-      if (roleData) {
+      if (roleData && !roleError) {
         setUserRole(roleData.role);
       }
 
       // Get user profile and service_id
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("service_id")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
-      if (profileData) {
+      if (profileData && !profileError) {
         setServiceId(profileData.service_id);
       }
     } catch (error) {
