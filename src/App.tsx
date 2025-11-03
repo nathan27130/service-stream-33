@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
 import Calendar from "./pages/Calendar";
+import Management from "./pages/Management";
 import Products from "./pages/Products";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -42,7 +43,15 @@ const App = () => (
               } 
             />
             <Route 
-              path="/products" 
+              path="/management" 
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <Management />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/products"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <Products />

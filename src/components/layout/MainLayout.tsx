@@ -35,6 +35,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { path: "/", icon: LayoutDashboard, label: "Tableau de bord", roles: ["admin", "service", "readonly"] },
     { path: "/orders", icon: ClipboardList, label: "Commandes", roles: ["admin", "service"] },
     { path: "/calendar", icon: Calendar, label: "Agenda", roles: ["admin", "service"] },
+    { path: "/management", icon: BarChart3, label: "Gestion", roles: ["admin"] },
     { path: "/products", icon: Package, label: "Produits", roles: ["admin"] },
     { path: "/reports", icon: BarChart3, label: "Rapports", roles: ["admin", "service", "readonly"] },
     { path: "/settings", icon: Settings, label: "Paramètres", roles: ["admin"] },
