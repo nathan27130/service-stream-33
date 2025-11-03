@@ -25,7 +25,9 @@ const signupSchema = z.object({
     .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
     .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
     .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial"),
-  companyCode: z.string().min(1, "Le code d'entreprise est requis")
+  companyCode: z.string()
+    .min(6, "Le code entreprise doit contenir au moins 6 caractères")
+    .max(50, "Le code entreprise doit contenir moins de 50 caractères")
 });
 
 const loginSchema = z.object({
@@ -40,17 +42,37 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyCode, setCompanyCode] = useState("");
+  const [isFirstUser, setIsFirstUser] = useState(false);
+  const [checkingFirstUser, setCheckingFirstUser] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
+    const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
       }
     };
-    checkUser();
+    checkSession();
+
+    // Check if this is the first user
+    const checkFirstUser = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('validate-company-code', {
+          body: { action: 'check' }
+        });
+        
+        if (!error && data) {
+          setIsFirstUser(!data.exists);
+        }
+      } catch (error) {
+        console.error("Error checking first user:", error);
+      } finally {
+        setCheckingFirstUser(false);
+      }
+    };
+
+    checkFirstUser();
   }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -90,27 +112,45 @@ const Auth = () => {
           return;
         }
 
-        // Vérifier le code d'entreprise
-        if (signupValidation.data.companyCode !== "Pm2flr?%") {
-          toast.error("Code d'entreprise invalide");
+        // Call Edge Function to validate or create company code
+        const action = isFirstUser ? 'create' : 'validate';
+        const { data, error } = await supabase.functions.invoke('validate-company-code', {
+          body: { 
+            action,
+            companyCode: signupValidation.data.companyCode,
+            email: signupValidation.data.email,
+            password: signupValidation.data.password,
+            fullName: signupValidation.data.fullName
+          }
+        });
+
+        if (error) throw error;
+
+        if (data?.error) {
+          toast.error(data.error);
           setLoading(false);
           return;
         }
 
-        const { error } = await supabase.auth.signUp({
-          email: signupValidation.data.email,
-          password: signupValidation.data.password,
-          options: {
-            data: {
-              full_name: signupValidation.data.fullName,
-            },
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
+        if (action === 'validate' && !data?.valid) {
+          toast.error("Code entreprise invalide");
+          setLoading(false);
+          return;
+        }
 
-        if (error) throw error;
-        toast.success("Inscription réussie ! Vous pouvez maintenant vous connecter.");
-        setIsLogin(true);
+        if (isFirstUser) {
+          toast.success("Premier compte administrateur créé ! Vous pouvez maintenant vous connecter.");
+          setIsLogin(true);
+        } else {
+          toast.success("Compte créé avec succès ! Vous pouvez maintenant vous connecter.");
+          setIsLogin(true);
+        }
+
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setFullName("");
+        setCompanyCode("");
       }
     } catch (error: any) {
       toast.error(error.message || "Une erreur est survenue");
@@ -119,17 +159,34 @@ const Auth = () => {
     }
   };
 
+  if (checkingFirstUser) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
-            {isLogin ? "Connexion" : "Inscription"}
+            {isLogin 
+              ? "Connexion" 
+              : isFirstUser 
+                ? "Configuration initiale" 
+                : "Inscription"}
           </CardTitle>
           <CardDescription>
-            {isLogin
-              ? "Entrez vos identifiants pour accéder à l'application"
-              : "Créez un compte pour commencer"}
+            {isLogin 
+              ? "Entrez vos identifiants pour accéder à l'application" 
+              : isFirstUser
+                ? "Créez le premier compte administrateur et définissez le code d'entreprise"
+                : "Créez un compte avec le code d'entreprise"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -148,15 +205,23 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="companyCode">Code d'entreprise</Label>
+                  <Label htmlFor="companyCode">
+                    {isFirstUser ? "Créer un code entreprise" : "Code entreprise"}
+                  </Label>
                   <Input
                     id="companyCode"
                     type="password"
-                    placeholder="Entrez le code d'entreprise"
+                    placeholder={isFirstUser ? "Créez un code sécurisé (min. 6 caractères)" : "Entrez le code entreprise"}
                     value={companyCode}
                     onChange={(e) => setCompanyCode(e.target.value)}
                     required
+                    minLength={6}
                   />
+                  {isFirstUser && (
+                    <p className="text-xs text-muted-foreground">
+                      ⚠️ Ce code sera requis pour tous les futurs employés. Conservez-le en sécurité !
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -197,19 +262,25 @@ const Auth = () => {
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLogin ? "Se connecter" : "S'inscrire"}
+              {isLogin 
+                ? "Se connecter" 
+                : isFirstUser
+                  ? "Créer le compte administrateur"
+                  : "S'inscrire"}
             </Button>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin
-                ? "Pas encore de compte ? S'inscrire"
-                : "Déjà un compte ? Se connecter"}
-            </Button>
+            {!isFirstUser && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setIsLogin(!isLogin)}
+              >
+                {isLogin
+                  ? "Pas encore de compte ? S'inscrire"
+                  : "Déjà un compte ? Se connecter"}
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>
