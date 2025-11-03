@@ -35,6 +35,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
   const [customers, setCustomers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
 
   // Form state
@@ -65,15 +66,17 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
   }, [open, editOrder]);
 
   const loadData = async () => {
-    const [customersData, servicesData, productsData] = await Promise.all([
+    const [customersData, servicesData, productsData, templatesData] = await Promise.all([
       supabase.from("customers").select("*").order("name"),
       supabase.from("services").select("*").eq("active", true).order("name"),
-      supabase.from("products").select("*").eq("active", true).order("name")
+      supabase.from("products").select("*").eq("active", true).order("name"),
+      supabase.from("templates").select("*, services(name)").order("template_name")
     ]);
 
     if (customersData.data) setCustomers(customersData.data);
     if (servicesData.data) setServices(servicesData.data);
     if (productsData.data) setProducts(productsData.data);
+    if (templatesData.data) setTemplates(templatesData.data);
   };
 
   const populateForm = (order: any) => {
@@ -118,6 +121,28 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
     const updated = [...orderItems];
     updated[index] = { ...updated[index], [field]: value };
     setOrderItems(updated);
+  };
+
+  const applyTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    // Apply template items
+    if (template.items_json && Array.isArray(template.items_json)) {
+      setOrderItems(template.items_json.map((item: any) => ({
+        product_name: item.product_name || "",
+        quantity: item.quantity || 1,
+        unit: item.unit || "unité",
+        comment: item.comment || "",
+      })));
+    }
+
+    // Apply default service if set
+    if (template.default_service_id) {
+      setServiceId(template.default_service_id);
+    }
+
+    toast.success(`Modèle "${template.template_name}" appliqué`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -395,6 +420,29 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
               rows={3}
             />
           </div>
+
+          {/* Template Selection */}
+          {templates.length > 0 && (
+            <div>
+              <Label>Utiliser un modèle</Label>
+              <Select onValueChange={applyTemplate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un modèle de commande" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.template_name}
+                      {template.services && ` (${template.services.name})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Le modèle remplacera les articles actuels
+              </p>
+            </div>
+          )}
 
           {/* Order Items */}
           <div className="space-y-4">
