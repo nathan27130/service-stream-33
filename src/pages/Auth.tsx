@@ -14,6 +14,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [companyCode, setCompanyCode] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,6 +43,13 @@ const Auth = () => {
         toast.success("Connexion réussie !");
         navigate("/");
       } else {
+        // Vérifier le code d'entreprise
+        if (companyCode !== "Pm2flr?%") {
+          toast.error("Code d'entreprise invalide");
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -80,17 +88,30 @@ const Auth = () => {
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nom complet</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Jean Dupont"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nom complet</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Jean Dupont"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="companyCode">Code d'entreprise</Label>
+                  <Input
+                    id="companyCode"
+                    type="password"
+                    placeholder="Entrez le code d'entreprise"
+                    value={companyCode}
+                    onChange={(e) => setCompanyCode(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
             )}
             
             <div className="space-y-2">
