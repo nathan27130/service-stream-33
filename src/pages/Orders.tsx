@@ -1,22 +1,61 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
+import OrderFormModal from "@/components/orders/OrderFormModal";
+import OrdersTable from "@/components/orders/OrdersTable";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Orders = () => {
-  const navigate = useNavigate();
+  const { serviceId, hasRole } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
+    loadOrders();
+  }, [serviceId]);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      
+      let query = supabase
+        .from("orders")
+        .select(`
+          *,
+          customers(*),
+          services(*)
+        `)
+        .order("due_at", { ascending: false });
+
+      // Filter by service if service role
+      if (hasRole("service") && serviceId) {
+        query = query.eq("service_id", serviceId);
       }
-    };
-    checkAuth();
-  }, [navigate]);
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error("Error loading orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (order: any) => {
+    setEditingOrder(order);
+    setShowModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    setEditingOrder(null);
+  };
 
   return (
     <MainLayout>
@@ -28,17 +67,30 @@ const Orders = () => {
               Gérez toutes vos commandes clients
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setShowModal(true)}>
             <Plus className="h-5 w-5" />
             Nouvelle commande
           </Button>
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-12 text-center">
-          <p className="text-muted-foreground">
-            La liste des commandes sera disponible prochainement.
-          </p>
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <OrdersTable 
+            orders={orders} 
+            onRefresh={loadOrders}
+            onEdit={handleEdit}
+          />
+        )}
+
+        <OrderFormModal
+          open={showModal}
+          onOpenChange={handleModalClose}
+          onSuccess={loadOrders}
+          editOrder={editingOrder}
+        />
       </div>
     </MainLayout>
   );
