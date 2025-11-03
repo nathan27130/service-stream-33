@@ -128,6 +128,13 @@ Deno.serve(async (req) => {
 
       if (authError) {
         console.error("Error creating user:", authError);
+        // Handle specific error cases
+        if (authError.code === "email_exists" || authError.message?.includes("already been registered")) {
+          return new Response(
+            JSON.stringify({ error: "Un compte avec cet email existe déjà. Veuillez vous connecter." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         return new Response(
           JSON.stringify({ error: genericError }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -212,6 +219,13 @@ Deno.serve(async (req) => {
 
         if (authError) {
           console.error("Error creating user:", authError);
+          // Handle specific error cases
+          if (authError.code === "email_exists" || authError.message?.includes("already been registered")) {
+            return new Response(
+              JSON.stringify({ error: "Un compte avec cet email existe déjà. Veuillez vous connecter." }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
           return new Response(
             JSON.stringify({ error: genericError }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
