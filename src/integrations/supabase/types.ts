@@ -71,6 +71,7 @@ export type Database = {
       order_items: {
         Row: {
           comment: string | null
+          completed: boolean
           created_at: string | null
           id: string
           order_id: string
@@ -80,6 +81,7 @@ export type Database = {
         }
         Insert: {
           comment?: string | null
+          completed?: boolean
           created_at?: string | null
           id?: string
           order_id: string
@@ -89,6 +91,7 @@ export type Database = {
         }
         Update: {
           comment?: string | null
+          completed?: boolean
           created_at?: string | null
           id?: string
           order_id?: string

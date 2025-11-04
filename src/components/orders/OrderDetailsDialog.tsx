@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Clock, User, Phone, Mail, Package, FileText, AlertCircle, CheckCircle2, PlayCircle, ClockIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 
@@ -75,6 +76,27 @@ const OrderDetailsDialog = ({ orderId, open, onOpenChange }: OrderDetailsDialogP
     } catch (error) {
       console.error("Error updating order status:", error);
       toast.error("Erreur lors de la mise à jour du statut");
+    }
+  };
+
+  const toggleItemCompletion = async (itemId: string, currentCompleted: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("order_items")
+        .update({ completed: !currentCompleted })
+        .eq("id", itemId);
+
+      if (error) throw error;
+
+      toast.success(
+        !currentCompleted 
+          ? "Article marqué comme préparé" 
+          : "Article marqué comme non préparé"
+      );
+      loadOrderDetails();
+    } catch (error) {
+      console.error("Error updating item completion:", error);
+      toast.error("Erreur lors de la mise à jour de l'article");
     }
   };
 
@@ -224,20 +246,33 @@ const OrderDetailsDialog = ({ orderId, open, onOpenChange }: OrderDetailsDialogP
               {order.order_items?.map((item: any) => (
                 <div 
                   key={item.id} 
-                  className="bg-muted/50 rounded-lg p-3 flex items-start justify-between"
+                  className={`rounded-lg p-3 flex items-start gap-3 transition-colors ${
+                    item.completed 
+                      ? "bg-green-500/20 border border-green-500/30" 
+                      : "bg-muted/50"
+                  }`}
                 >
-                  <div className="flex-1">
-                    <div className="font-medium">{item.product_name}</div>
-                    {item.comment && (
-                      <div className="text-sm text-muted-foreground mt-1 flex items-start gap-2">
-                        <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                        <span>{item.comment}</span>
+                  <Checkbox
+                    checked={item.completed}
+                    onCheckedChange={() => toggleItemCompletion(item.id, item.completed)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1 flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className={`font-medium ${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
+                        {item.product_name}
                       </div>
-                    )}
-                  </div>
-                  <div className="text-right ml-4">
-                    <div className="font-semibold">
-                      {item.quantity} {item.unit}
+                      {item.comment && (
+                        <div className="text-sm text-muted-foreground mt-1 flex items-start gap-2">
+                          <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <span>{item.comment}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className={`font-semibold ${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
+                        {item.quantity} {item.unit}
+                      </div>
                     </div>
                   </div>
                 </div>
