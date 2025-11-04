@@ -157,18 +157,16 @@ Deno.serve(async (req) => {
         throw settingsError;
       }
 
-      // Create profile with service
+      // Update profile with service (profile is created by trigger)
       const { error: profileError } = await supabase
         .from("profiles")
-        .insert({ 
-          id: authData.user.id,
-          full_name: fullName,
-          email: email,
+        .update({ 
           service_id: serviceId
-        });
+        })
+        .eq("id", authData.user.id);
 
       if (profileError) {
-        console.error("Error creating profile:", profileError);
+        console.error("Error updating profile:", profileError);
         await supabase.auth.admin.deleteUser(authData.user.id);
         throw profileError;
       }
@@ -249,18 +247,16 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Create profile with service
+        // Update profile with service (profile is created by trigger)
         const { error: profileError } = await supabase
           .from("profiles")
-          .insert({ 
-            id: authData.user.id,
-            full_name: fullName,
-            email: email,
+          .update({ 
             service_id: serviceId
-          });
+          })
+          .eq("id", authData.user.id);
 
         if (profileError) {
-          console.error("Error creating profile:", profileError);
+          console.error("Error updating profile:", profileError);
           await supabase.auth.admin.deleteUser(authData.user.id);
           throw profileError;
         }
