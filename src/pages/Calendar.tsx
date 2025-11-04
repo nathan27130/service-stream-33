@@ -23,18 +23,12 @@ const Calendar = () => {
   }, [serviceId]);
 
   const loadServices = async () => {
-    let query = supabase
+    // All users can see all services in calendar
+    const { data, error } = await supabase
       .from("services")
       .select("*")
       .eq("active", true)
       .order("name");
-
-    // Filter by service if service role
-    if (hasRole("service") && serviceId) {
-      query = query.eq("id", serviceId);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       console.error("Error loading services:", error);
