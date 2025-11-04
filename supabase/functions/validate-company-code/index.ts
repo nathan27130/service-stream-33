@@ -26,7 +26,8 @@ const createUserSchema = z.object({
     .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Name contains invalid characters"),
   companyCode: z.string()
     .min(6, "Company code must be at least 6 characters")
-    .max(50, "Company code too long")
+    .max(50, "Company code too long"),
+  serviceId: z.string().uuid("Invalid service ID")
 });
 
 const checkSchema = z.object({
@@ -97,7 +98,7 @@ Deno.serve(async (req) => {
         );
       }
       
-      const { email, password, fullName, companyCode } = createResult.data;
+      const { email, password, fullName, companyCode, serviceId } = createResult.data;
       
       // Hash the company code
       const hash = createHash("sha256");
@@ -156,6 +157,22 @@ Deno.serve(async (req) => {
         throw settingsError;
       }
 
+      // Create profile with service
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({ 
+          id: authData.user.id,
+          full_name: fullName,
+          email: email,
+          service_id: serviceId
+        });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw profileError;
+      }
+
       // Assign admin role to first user
       const { error: roleError } = await supabase
         .from("user_roles")
@@ -185,7 +202,7 @@ Deno.serve(async (req) => {
         );
       }
       
-      const { email, password, fullName, companyCode } = validateResult.data;
+      const { email, password, fullName, companyCode, serviceId } = validateResult.data;
       
       // Hash the company code
       const hash = createHash("sha256");
@@ -230,6 +247,31 @@ Deno.serve(async (req) => {
             JSON.stringify({ error: genericError }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
+        }
+
+        // Create profile with service
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({ 
+            id: authData.user.id,
+            full_name: fullName,
+            email: email,
+            service_id: serviceId
+          });
+
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          await supabase.auth.admin.deleteUser(authData.user.id);
+          throw profileError;
+        }
+
+        // Assign default "service" role to new users
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: authData.user.id, role: "service" });
+
+        if (roleError) {
+          console.error("Error assigning role:", roleError);
         }
 
         return new Response(

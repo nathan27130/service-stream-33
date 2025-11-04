@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -27,7 +28,8 @@ const signupSchema = z.object({
     .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial"),
   companyCode: z.string()
     .min(6, "Le code entreprise doit contenir au moins 6 caractères")
-    .max(50, "Le code entreprise doit contenir moins de 50 caractères")
+    .max(50, "Le code entreprise doit contenir moins de 50 caractères"),
+  serviceId: z.string().min(1, "Veuillez sélectionner un service")
 });
 
 const loginSchema = z.object({
@@ -42,6 +44,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyCode, setCompanyCode] = useState("");
+  const [serviceId, setServiceId] = useState("");
+  const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
   const [isFirstUser, setIsFirstUser] = useState(false);
   const [checkingFirstUser, setCheckingFirstUser] = useState(true);
   const navigate = useNavigate();
@@ -54,6 +58,20 @@ const Auth = () => {
       }
     };
     checkSession();
+
+    // Load services
+    const loadServices = async () => {
+      const { data, error } = await supabase
+        .from("services")
+        .select("id, name")
+        .eq("active", true)
+        .order("name");
+      
+      if (!error && data) {
+        setServices(data);
+      }
+    };
+    loadServices();
 
     // Check if this is the first user
     const checkFirstUser = async () => {
@@ -108,7 +126,8 @@ const Auth = () => {
           fullName,
           email,
           password,
-          companyCode
+          companyCode,
+          serviceId
         });
         
         if (!signupValidation.success) {
@@ -125,7 +144,8 @@ const Auth = () => {
             companyCode: signupValidation.data.companyCode,
             email: signupValidation.data.email,
             password: signupValidation.data.password,
-            fullName: signupValidation.data.fullName
+            fullName: signupValidation.data.fullName,
+            serviceId: signupValidation.data.serviceId
           }
         });
 
@@ -156,6 +176,7 @@ const Auth = () => {
         setPassword("");
         setFullName("");
         setCompanyCode("");
+        setServiceId("");
       }
     } catch (error: any) {
       toast.error(error.message || "Une erreur est survenue");
@@ -208,6 +229,21 @@ const Auth = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service">Service / Secteur d'activité</Label>
+                  <Select value={serviceId} onValueChange={setServiceId} required>
+                    <SelectTrigger id="service">
+                      <SelectValue placeholder="Sélectionnez votre service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="companyCode">
