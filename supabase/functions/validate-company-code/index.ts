@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHash } from "https://deno.land/std@0.177.0/node/crypto.ts";
+import { createHash, timingSafeEqual } from "https://deno.land/std@0.177.0/node/crypto.ts";
+import { Buffer } from "https://deno.land/std@0.177.0/node/buffer.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
@@ -221,7 +222,12 @@ Deno.serve(async (req) => {
         );
       }
 
-      const isValid = data.company_code_hash === codeHash;
+      // Use constant-time comparison to prevent timing attacks
+      const storedHashStr = data.company_code_hash as string;
+      const storedHash = Buffer.from(storedHashStr, 'hex');
+      const providedHash = Buffer.from(codeHash as string, 'hex');
+      const isValid = storedHash.length === providedHash.length && 
+                      timingSafeEqual(storedHash, providedHash);
 
       if (isValid) {
         // Create the user account
