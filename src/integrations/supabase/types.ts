@@ -78,6 +78,7 @@ export type Database = {
           product_name: string
           quantity: number
           unit: string | null
+          weight: number | null
         }
         Insert: {
           comment?: string | null
@@ -88,6 +89,7 @@ export type Database = {
           product_name: string
           quantity: number
           unit?: string | null
+          weight?: number | null
         }
         Update: {
           comment?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           unit?: string | null
+          weight?: number | null
         }
         Relationships: [
           {

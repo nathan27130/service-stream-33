@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { MapPin, Clock, User, Phone, Mail, Package, FileText, AlertCircle, CheckCircle2, PlayCircle, ClockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 
@@ -97,6 +98,30 @@ const OrderDetailsDialog = ({ orderId, open, onOpenChange }: OrderDetailsDialogP
     } catch (error) {
       console.error("Error updating item completion:", error);
       toast.error("Erreur lors de la mise à jour de l'article");
+    }
+  };
+
+  const updateItemWeight = async (itemId: string, weight: string) => {
+    try {
+      const weightValue = weight.trim() === "" ? null : parseFloat(weight);
+      
+      if (weightValue !== null && (isNaN(weightValue) || weightValue < 0)) {
+        toast.error("Le poids doit être un nombre positif");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("order_items")
+        .update({ weight: weightValue })
+        .eq("id", itemId);
+
+      if (error) throw error;
+
+      toast.success("Poids mis à jour");
+      loadOrderDetails();
+    } catch (error) {
+      console.error("Error updating item weight:", error);
+      toast.error("Erreur lors de la mise à jour du poids");
     }
   };
 
@@ -257,22 +282,39 @@ const OrderDetailsDialog = ({ orderId, open, onOpenChange }: OrderDetailsDialogP
                     onCheckedChange={() => toggleItemCompletion(item.id, item.completed)}
                     className="mt-1"
                   />
-                  <div className="flex-1 flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className={`font-medium ${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
-                        {item.product_name}
-                      </div>
-                      {item.comment && (
-                        <div className="text-sm text-muted-foreground mt-1 flex items-start gap-2">
-                          <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                          <span>{item.comment}</span>
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className={`font-medium ${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
+                          {item.product_name}
                         </div>
-                      )}
-                    </div>
-                    <div className="text-right ml-4">
-                      <div className={`font-semibold ${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
-                        {item.quantity} {item.unit}
+                        {item.comment && (
+                          <div className="text-sm text-muted-foreground mt-1 flex items-start gap-2">
+                            <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            <span>{item.comment}</span>
+                          </div>
+                        )}
                       </div>
+                      <div className="text-right ml-4">
+                        <div className={`font-semibold ${item.completed ? "text-green-700 dark:text-green-300" : ""}`}>
+                          {item.quantity} {item.unit}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                        Poids :
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="En kg"
+                        defaultValue={item.weight || ""}
+                        onBlur={(e) => updateItemWeight(item.id, e.target.value)}
+                        className="h-8 w-28"
+                      />
+                      <span className="text-sm text-muted-foreground">kg</span>
                     </div>
                   </div>
                 </div>
