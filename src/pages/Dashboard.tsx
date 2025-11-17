@@ -30,6 +30,29 @@ const Dashboard = () => {
     }
   }, [userRole, serviceId]);
 
+  useEffect(() => {
+    // Subscribe to realtime changes on orders table
+    const channel = supabase
+      .channel('dashboard-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        () => {
+          // Reload data when any change occurs on orders
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userRole, serviceId]);
+
   const loadData = async () => {
     try {
       // Load services (all for admin, specific for service users)
