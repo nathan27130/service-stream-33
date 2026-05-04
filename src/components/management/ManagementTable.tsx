@@ -181,12 +181,12 @@ const ManagementTable = ({ orders, services, onRefresh }: ManagementTableProps) 
             <tbody>
               ${selectedData.map(order => `
                 <tr>
-                  <td>${format(new Date(order.due_at), "dd/MM/yyyy HH:mm")}</td>
-                  <td>${order.customers?.name || ""}</td>
-                  <td>${order.services?.name || ""}</td>
-                  <td>${order.type}</td>
-                  <td>${order.status}</td>
-                  <td>${order.priority}</td>
+                  <td>${escapeHtml(format(new Date(order.due_at), "dd/MM/yyyy HH:mm"))}</td>
+                  <td>${escapeHtml(order.customers?.name || "")}</td>
+                  <td>${escapeHtml(order.services?.name || "")}</td>
+                  <td>${escapeHtml(order.type)}</td>
+                  <td>${escapeHtml(order.status)}</td>
+                  <td>${escapeHtml(order.priority)}</td>
                 </tr>
               `).join("")}
             </tbody>
