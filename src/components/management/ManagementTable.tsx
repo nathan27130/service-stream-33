@@ -144,7 +144,15 @@ const ManagementTable = ({ orders, services, onRefresh }: ManagementTableProps) 
   const exportToPDF = () => {
     // Simple PDF export using window.print
     const selectedData = orders.filter(o => selectedOrders.includes(o.id));
-    
+
+    const escapeHtml = (s: unknown) =>
+      String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
     const printContent = `
       <html>
         <head>
