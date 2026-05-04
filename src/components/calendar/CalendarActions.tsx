@@ -26,18 +26,11 @@ const CalendarActions = ({ serviceId, serviceName, selectedDate }: CalendarActio
 
   const handleExportICal = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Vous devez être connecté pour exporter le calendrier");
-        return;
-      }
-
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const icalUrl = `${supabaseUrl}/functions/v1/ical-export?service=${serviceId}&token=${session.access_token}`;
-      
-      // Copy authenticated URL to clipboard
+      const icalUrl = `${supabaseUrl}/functions/v1/ical-export?service=${serviceId}`;
+
       navigator.clipboard.writeText(icalUrl);
-      toast.success("URL iCal sécurisée copiée dans le presse-papier");
+      toast.success("URL iCal copiée. Authentification requise pour y accéder.");
     } catch (error) {
       console.error("Export iCal error:", error);
       toast.error("Erreur lors de l'export du calendrier");
