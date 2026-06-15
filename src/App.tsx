@@ -15,6 +15,7 @@ import Settings from "./pages/Settings";
 import PrintOrder from "./pages/PrintOrder";
 import PrintPlanning from "./pages/PrintPlanning";
 import NotFound from "./pages/NotFound";
+import QuoteImport from "./pages/QuoteImport";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,14 @@ const App = () => (
                   <PrintPlanning />
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/quote-import"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "service"]}>
+                  <QuoteImport />
+                </ProtectedRoute>
+              }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
