@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Upload, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import MainLayout from "@/components/layout/MainLayout";
 
 const fileToBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
