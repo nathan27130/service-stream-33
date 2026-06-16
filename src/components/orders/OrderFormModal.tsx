@@ -55,91 +55,81 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
   ]);
 
   useEffect(() => {
-    if (open) {
-      (async () => {
-        await loadData(editOrder);
-        if (editOrder) {
-          await populateForm(editOrder);
-        } else {
-          resetForm();
+    if (!open) return;
+    (async () => {
+      // Fetch every list AND the order's items in parallel, then apply
+      // all state in one synchronous block so Radix <Select> sees its
+      // value AND the matching <SelectItem> in the same render pass.
+      const [customersData, servicesData, productsData, templatesData, itemsData] =
+        await Promise.all([
+          supabase.from("customers").select("*").order("name"),
+          supabase.from("services").select("*").eq("active", true).order("name"),
+          supabase.from("products").select("*").eq("active", true).order("name"),
+          supabase.from("templates").select("*, services(name)").order("template_name"),
+          editOrder
+            ? supabase
+                .from("order_items")
+                .select("product_name, quantity, unit, comment")
+                .eq("order_id", editOrder.id)
+                .order("created_at", { ascending: true })
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+      let customersList = customersData.data || [];
+      let servicesList = servicesData.data || [];
+
+      if (editOrder) {
+        if (
+          editOrder.customers &&
+          !customersList.some((c: any) => c.id === editOrder.customers.id)
+        ) {
+          customersList = [editOrder.customers, ...customersList];
         }
-      })();
-    }
+        if (
+          editOrder.services &&
+          !servicesList.some((s: any) => s.id === editOrder.services.id)
+        ) {
+          servicesList = [editOrder.services, ...servicesList];
+        }
+      }
+
+      setCustomers(customersList);
+      setServices(servicesList);
+      setProducts(productsData.data || []);
+      setTemplates(templatesData.data || []);
+
+      if (editOrder) {
+        setShowNewCustomer(false);
+        setCustomerId(editOrder.customer_id || "");
+        setServiceId(editOrder.service_id || "");
+        setType(editOrder.type);
+        const dueAt = new Date(editOrder.due_at);
+        setDueDate(format(dueAt, "yyyy-MM-dd"));
+        setDueTime(format(dueAt, "HH:mm"));
+        setLocation(editOrder.location);
+        setAddress(editOrder.address || "");
+        setStatus(editOrder.status);
+        setPriority(editOrder.priority);
+        setNotes(editOrder.notes || "");
+
+        const items = itemsData.data;
+        if (items && items.length > 0) {
+          setOrderItems(
+            items.map((i: any) => ({
+              product_name: i.product_name || "",
+              quantity: Number(i.quantity) || 1,
+              unit: i.unit || "unité",
+              comment: i.comment || "",
+            }))
+          );
+        } else {
+          setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+        }
+      } else {
+        resetForm();
+      }
+    })();
   }, [open, editOrder]);
-
-  const loadData = async (orderBeingEdited?: any) => {
-    const [customersData, servicesData, productsData, templatesData] = await Promise.all([
-      supabase.from("customers").select("*").order("name"),
-      supabase.from("services").select("*").eq("active", true).order("name"),
-      supabase.from("products").select("*").eq("active", true).order("name"),
-      supabase.from("templates").select("*, services(name)").order("template_name")
-    ]);
-
-    let customersList = customersData.data || [];
-    let servicesList = servicesData.data || [];
-
-    // Make sure the order's current customer/service appear in dropdowns,
-    // even if the customer was just created or the service is now inactive.
-    if (orderBeingEdited) {
-      if (
-        orderBeingEdited.customers &&
-        !customersList.some((c: any) => c.id === orderBeingEdited.customers.id)
-      ) {
-        customersList = [orderBeingEdited.customers, ...customersList];
-      }
-      if (
-        orderBeingEdited.services &&
-        !servicesList.some((s: any) => s.id === orderBeingEdited.services.id)
-      ) {
-        servicesList = [orderBeingEdited.services, ...servicesList];
-      }
-    }
-
-    setCustomers(customersList);
-    setServices(servicesList);
-    if (productsData.data) setProducts(productsData.data);
-    if (templatesData.data) setTemplates(templatesData.data);
-  };
-
-  const populateForm = async (order: any) => {
-    setShowNewCustomer(false);
-    setCustomerId(order.customer_id || "");
-    setServiceId(order.service_id || "");
-    setType(order.type);
-    const dueAt = new Date(order.due_at);
-    setDueDate(format(dueAt, "yyyy-MM-dd"));
-    setDueTime(format(dueAt, "HH:mm"));
-    setLocation(order.location);
-    setAddress(order.address || "");
-    setStatus(order.status);
-    setPriority(order.priority);
-    setNotes(order.notes || "");
-
-
-    // Load existing order items so they're editable
-    const { data: items, error } = await supabase
-      .from("order_items")
-      .select("product_name, quantity, unit, comment")
-      .eq("order_id", order.id)
-      .order("created_at", { ascending: true });
-    if (error) {
-      console.error("Error loading order items:", error);
-      setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
-      return;
-    }
-    if (items && items.length > 0) {
-      setOrderItems(
-        items.map((i: any) => ({
-          product_name: i.product_name || "",
-          quantity: Number(i.quantity) || 1,
-          unit: i.unit || "unité",
-          comment: i.comment || "",
-        }))
-      );
-    } else {
-      setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
-    }
-  };
 
   const resetForm = () => {
     setCustomerId("");
