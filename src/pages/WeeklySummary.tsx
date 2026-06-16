@@ -170,12 +170,6 @@ const WeeklySummary = () => {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Cumul global */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-xl">Cumul global</CardTitle>
-                <Badge variant="outline">
-          <div className="space-y-6">
             {/* Détail par service */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {groups.map((group) => (
