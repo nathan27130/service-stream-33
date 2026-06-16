@@ -176,23 +176,6 @@ const WeeklySummary = () => {
 
   const totalGroupsAcrossServices = groups.reduce((sum, g) => sum + g.groups.length, 0);
 
-  const globalGroups = useMemo(() => {
-    const map = new Map<string, ProductGroup>();
-    for (const group of groups) {
-      for (const product of group.groups) {
-        const key = `${normalizeProductName(product.productName)}__${normalizeUnit(product.unit)}`;
-        const existing = map.get(key);
-        if (existing) {
-          existing.totalQuantity += product.totalQuantity;
-          existing.items.push(...product.items);
-        } else {
-          map.set(key, { ...product, items: [...product.items] });
-        }
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
-  }, [groups]);
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -250,18 +233,6 @@ const WeeklySummary = () => {
               ))}
             </div>
 
-            {/* Cumul global (en dessous) */}
-            <Card className="border-primary/30">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-xl">Cumul global — total à produire</CardTitle>
-                <Badge variant="outline">
-                  {globalGroups.length} produit{globalGroups.length > 1 ? "s" : ""}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <ProductTable groups={globalGroups} />
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
