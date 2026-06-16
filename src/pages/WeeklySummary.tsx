@@ -233,18 +233,6 @@ const WeeklySummary = () => {
               ))}
             </div>
 
-            {/* Cumul global (en dessous) */}
-            <Card className="border-primary/30">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-xl">Cumul global — total à produire</CardTitle>
-                <Badge variant="outline">
-                  {globalGroups.length} produit{globalGroups.length > 1 ? "s" : ""}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <ProductTable groups={globalGroups} />
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
