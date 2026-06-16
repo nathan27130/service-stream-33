@@ -41,6 +41,7 @@ export type Database = {
       customers: {
         Row: {
           created_at: string | null
+          customer_type: Database["public"]["Enums"]["customer_type"]
           default_address: string | null
           email: string | null
           id: string
@@ -50,6 +51,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          customer_type?: Database["public"]["Enums"]["customer_type"]
           default_address?: string | null
           email?: string | null
           id?: string
@@ -59,6 +61,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          customer_type?: Database["public"]["Enums"]["customer_type"]
           default_address?: string | null
           email?: string | null
           id?: string
@@ -183,6 +186,7 @@ export type Database = {
           active: boolean | null
           category: string | null
           created_at: string | null
+          default_service_id: string | null
           id: string
           name: string
           unit: string | null
@@ -192,6 +196,7 @@ export type Database = {
           active?: boolean | null
           category?: string | null
           created_at?: string | null
+          default_service_id?: string | null
           id?: string
           name: string
           unit?: string | null
@@ -201,12 +206,21 @@ export type Database = {
           active?: boolean | null
           category?: string | null
           created_at?: string | null
+          default_service_id?: string | null
           id?: string
           name?: string
           unit?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_default_service_id_fkey"
+            columns: ["default_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -343,6 +357,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "service" | "readonly"
+      customer_type: "particulier" | "pro" | "traiteur"
       location_type: "retrait" | "livraison"
       order_priority: "basse" | "normale" | "haute"
       order_status: "a_faire" | "en_cours" | "pret" | "livre" | "annule"
@@ -476,6 +491,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "service", "readonly"],
+      customer_type: ["particulier", "pro", "traiteur"],
       location_type: ["retrait", "livraison"],
       order_priority: ["basse", "normale", "haute"],
       order_status: ["a_faire", "en_cours", "pret", "livre", "annule"],
