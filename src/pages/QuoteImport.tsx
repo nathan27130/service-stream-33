@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Upload, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import MainLayout from "@/components/layout/MainLayout";
 
 const fileToBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -228,187 +229,189 @@ export default function QuoteImport() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Importer un devis IsaFact</h1>
-        <p className="text-muted-foreground">
-          Téléverse un PDF de devis, l'IA extrait les informations et propose un dispatch par service.
-        </p>
-      </div>
+    <MainLayout>
+      <div className="max-w-4xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Importer un devis IsaFact</h1>
+          <p className="text-muted-foreground">
+            Téléverse un PDF de devis, l'IA extrait les informations et propose un dispatch par service.
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>1. Fichier PDF</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
-          <Button onClick={handleExtract} disabled={!file || loading}>
-            {loading ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Extraction…</>
-            ) : (
-              <><Upload className="mr-2 h-4 w-4" /> Extraire</>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {result && !created && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>2. Client</CardTitle>
-              {existingCustomer && (
-                <CardDescription>
-                  Client existant trouvé : {existingCustomer.name} — il sera réutilisé (pas de doublon créé).
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Nom</Label>
-                <Input
-                  value={result.client?.nom || ""}
-                  onChange={(e) => setResult({ ...result, client: { ...result.client, nom: e.target.value } })}
-                />
-              </div>
-              <div>
-                <Label>Type de client</Label>
-                <Select
-                  value={result.customer_type}
-                  onValueChange={(v) => setResult({ ...result, customer_type: v as any })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="particulier">Particulier</SelectItem>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="traiteur">Traiteur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Date de prestation</Label>
-                <Input
-                  type="date"
-                  value={result.date_prestation || ""}
-                  onChange={(e) => setResult({ ...result, date_prestation: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Heure de livraison</Label>
-                <Input
-                  value={result.heure_livraison || ""}
-                  onChange={(e) => setResult({ ...result, heure_livraison: e.target.value })}
-                  placeholder="ex: 14h-16h"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Notes</Label>
-                <Textarea
-                  value={result.notes || ""}
-                  onChange={(e) => setResult({ ...result, notes: e.target.value })}
-                  rows={2}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>3. Produits et dispatch par service</CardTitle>
-              <CardDescription>
-                Le service est proposé automatiquement à partir du devis. Corrige-le si besoin avant de créer la commande.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {result.lignes.map((ligne, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded-lg">
-                  <div className="col-span-4">
-                    <Label className="text-xs">Désignation</Label>
-                    <Input
-                      value={ligne.description}
-                      onChange={(e) => updateLine(index, "description", e.target.value)}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Quantité</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={ligne.quantite}
-                      onChange={(e) => updateLine(index, "quantite", parseFloat(e.target.value))}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Unité</Label>
-                    <Input
-                      value={ligne.unite || ""}
-                      onChange={(e) => updateLine(index, "unite", e.target.value)}
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Label className="text-xs">Service</Label>
-                    <Select
-                      value={ligne.service_suggere}
-                      onValueChange={(v) => updateLine(index, "service_suggere", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(serviceLabel).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-1">
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeLine(index)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addLine}>
-                <Plus className="h-4 w-4 mr-2" /> Ajouter une ligne
-              </Button>
-
-              {result.total_ttc != null && (
-                <p className="text-sm text-muted-foreground pt-2">
-                  Total TTC du devis : <span className="font-medium text-foreground">{result.total_ttc.toFixed(2)} €</span>
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button onClick={handleCreateOrder} disabled={creating} size="lg">
-              {creating ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Création…</>
+        <Card>
+          <CardHeader>
+            <CardTitle>1. Fichier PDF</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            <Button onClick={handleExtract} disabled={!file || loading}>
+              {loading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Extraction…</>
               ) : (
-                "Créer la ou les commandes"
+                <><Upload className="mr-2 h-4 w-4" /> Extraire</>
               )}
             </Button>
-          </div>
-        </>
-      )}
-
-      {created && (
-        <Card className="border-green-500">
-          <CardContent className="flex items-center gap-3 py-6">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
-            <div>
-              <p className="font-medium">Commande(s) créée(s) avec succès</p>
-              <p className="text-sm text-muted-foreground">
-                Elles sont visibles dans le tableau de bord, dispatchées par service.
-              </p>
-            </div>
           </CardContent>
         </Card>
-      )}
-    </div>
+
+        {result && !created && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>2. Client</CardTitle>
+                {existingCustomer && (
+                  <CardDescription>
+                    Client existant trouvé : {existingCustomer.name} — il sera réutilisé (pas de doublon créé).
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nom</Label>
+                  <Input
+                    value={result.client?.nom || ""}
+                    onChange={(e) => setResult({ ...result, client: { ...result.client, nom: e.target.value } })}
+                  />
+                </div>
+                <div>
+                  <Label>Type de client</Label>
+                  <Select
+                    value={result.customer_type}
+                    onValueChange={(v) => setResult({ ...result, customer_type: v as any })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="particulier">Particulier</SelectItem>
+                      <SelectItem value="pro">Pro</SelectItem>
+                      <SelectItem value="traiteur">Traiteur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Date de prestation</Label>
+                  <Input
+                    type="date"
+                    value={result.date_prestation || ""}
+                    onChange={(e) => setResult({ ...result, date_prestation: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Heure de livraison</Label>
+                  <Input
+                    value={result.heure_livraison || ""}
+                    onChange={(e) => setResult({ ...result, heure_livraison: e.target.value })}
+                    placeholder="ex: 14h-16h"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={result.notes || ""}
+                    onChange={(e) => setResult({ ...result, notes: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>3. Produits et dispatch par service</CardTitle>
+                <CardDescription>
+                  Le service est proposé automatiquement à partir du devis. Corrige-le si besoin avant de créer la commande.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {result.lignes.map((ligne, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded-lg">
+                    <div className="col-span-4">
+                      <Label className="text-xs">Désignation</Label>
+                      <Input
+                        value={ligne.description}
+                        onChange={(e) => updateLine(index, "description", e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Quantité</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={ligne.quantite}
+                        onChange={(e) => updateLine(index, "quantite", parseFloat(e.target.value))}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Unité</Label>
+                      <Input
+                        value={ligne.unite || ""}
+                        onChange={(e) => updateLine(index, "unite", e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <Label className="text-xs">Service</Label>
+                      <Select
+                        value={ligne.service_suggere}
+                        onValueChange={(v) => updateLine(index, "service_suggere", v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(serviceLabel).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-1">
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeLine(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                  <Plus className="h-4 w-4 mr-2" /> Ajouter une ligne
+                </Button>
+
+                {result.total_ttc != null && (
+                  <p className="text-sm text-muted-foreground pt-2">
+                    Total TTC du devis : <span className="font-medium text-foreground">{result.total_ttc.toFixed(2)} €</span>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button onClick={handleCreateOrder} disabled={creating} size="lg">
+                {creating ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Création…</>
+                ) : (
+                  "Créer la ou les commandes"
+                )}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {created && (
+          <Card className="border-green-500">
+            <CardContent className="flex items-center gap-3 py-6">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div>
+                <p className="font-medium">Commande(s) créée(s) avec succès</p>
+                <p className="text-sm text-muted-foreground">
+                  Elles sont visibles dans le tableau de bord, dispatchées par service.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </MainLayout>
   );
 }
