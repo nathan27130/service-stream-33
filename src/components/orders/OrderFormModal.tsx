@@ -79,8 +79,8 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
     if (templatesData.data) setTemplates(templatesData.data);
   };
 
-  const populateForm = (order: any) => {
-    setCustomerId(order.customer_id);
+  const populateForm = async (order: any) => {
+    setCustomerId(order.customer_id || "");
     setServiceId(order.service_id);
     setType(order.type);
     const dueAt = new Date(order.due_at);
@@ -91,6 +91,30 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
     setStatus(order.status);
     setPriority(order.priority);
     setNotes(order.notes || "");
+
+    // Load existing order items so they're editable
+    const { data: items, error } = await supabase
+      .from("order_items")
+      .select("product_name, quantity, unit, comment")
+      .eq("order_id", order.id)
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.error("Error loading order items:", error);
+      setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+      return;
+    }
+    if (items && items.length > 0) {
+      setOrderItems(
+        items.map((i: any) => ({
+          product_name: i.product_name || "",
+          quantity: Number(i.quantity) || 1,
+          unit: i.unit || "unité",
+          comment: i.comment || "",
+        }))
+      );
+    } else {
+      setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+    }
   };
 
   const resetForm = () => {
