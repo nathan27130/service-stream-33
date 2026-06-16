@@ -56,16 +56,18 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
 
   useEffect(() => {
     if (open) {
-      loadData();
-      if (editOrder) {
-        populateForm(editOrder);
-      } else {
-        resetForm();
-      }
+      (async () => {
+        await loadData(editOrder);
+        if (editOrder) {
+          await populateForm(editOrder);
+        } else {
+          resetForm();
+        }
+      })();
     }
   }, [open, editOrder]);
 
-  const loadData = async () => {
+  const loadData = async (orderBeingEdited?: any) => {
     const [customersData, servicesData, productsData, templatesData] = await Promise.all([
       supabase.from("customers").select("*").order("name"),
       supabase.from("services").select("*").eq("active", true).order("name"),
@@ -73,15 +75,36 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
       supabase.from("templates").select("*, services(name)").order("template_name")
     ]);
 
-    if (customersData.data) setCustomers(customersData.data);
-    if (servicesData.data) setServices(servicesData.data);
+    let customersList = customersData.data || [];
+    let servicesList = servicesData.data || [];
+
+    // Make sure the order's current customer/service appear in dropdowns,
+    // even if the customer was just created or the service is now inactive.
+    if (orderBeingEdited) {
+      if (
+        orderBeingEdited.customers &&
+        !customersList.some((c: any) => c.id === orderBeingEdited.customers.id)
+      ) {
+        customersList = [orderBeingEdited.customers, ...customersList];
+      }
+      if (
+        orderBeingEdited.services &&
+        !servicesList.some((s: any) => s.id === orderBeingEdited.services.id)
+      ) {
+        servicesList = [orderBeingEdited.services, ...servicesList];
+      }
+    }
+
+    setCustomers(customersList);
+    setServices(servicesList);
     if (productsData.data) setProducts(productsData.data);
     if (templatesData.data) setTemplates(templatesData.data);
   };
 
   const populateForm = async (order: any) => {
+    setShowNewCustomer(false);
     setCustomerId(order.customer_id || "");
-    setServiceId(order.service_id);
+    setServiceId(order.service_id || "");
     setType(order.type);
     const dueAt = new Date(order.due_at);
     setDueDate(format(dueAt, "yyyy-MM-dd"));
@@ -91,6 +114,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
     setStatus(order.status);
     setPriority(order.priority);
     setNotes(order.notes || "");
+
 
     // Load existing order items so they're editable
     const { data: items, error } = await supabase
