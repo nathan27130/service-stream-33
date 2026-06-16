@@ -20,19 +20,47 @@ Deno.serve(async (req) => {
       });
     }
 
-    const systemPrompt = `Tu es un assistant d'extraction de devis IsaFact. Tu reçois un PDF de devis et tu retournes UNIQUEMENT un JSON valide (pas de markdown, pas de texte autour) avec cette structure exacte :
+    // Le prompt demande maintenant aussi une proposition de service par ligne
+    // et le type de prestation (particulier / pro / traiteur), pour pré-remplir
+    // directement le dispatch dans l'app plutôt que de juste renvoyer du texte brut.
+    const systemPrompt = `Tu es un assistant d'extraction de devis IsaFact pour La Ferme du Louvier (élevage de porcs et poulets en plein air, vente de charcuterie, traiteur, boutique).
+
+Tu reçois un PDF de devis et tu retournes UNIQUEMENT un JSON valide (pas de markdown, pas de texte autour) avec cette structure exacte :
 {
   "client": { "nom": string, "adresse": string|null, "email": string|null, "telephone": string|null },
-  "date_prestation": string|null,  // ISO YYYY-MM-DD si trouvable
   "numero_devis": string|null,
+  "date_devis": string|null,
+  "date_prestation": string|null,
+  "heure_livraison": string|null,
+  "nb_personnes": number|null,
+  "customer_type": "particulier" | "pro" | "traiteur",
   "lignes": [
-    { "description": string, "quantite": number, "prix_unitaire_ht": number, "total_ht": number, "unite": string|null }
+    {
+      "description": string,
+      "quantite": number,
+      "unite": string|null,
+      "prix_unitaire_ttc": number,
+      "total_ttc": number,
+      "service_suggere": "cuisine" | "charcuterie" | "commande" | "boutique"
+    }
   ],
   "total_ht": number|null,
   "total_ttc": number|null,
   "tva": number|null,
   "notes": string|null
 }
+
+Règles pour "customer_type" :
+- "traiteur" si le devis mentionne une prestation traiteur, un nombre de personnes/adultes, un événement, une livraison à heure fixe.
+- "pro" si le client est une entreprise, un revendeur, ou si le devis mentionne un tarif professionnel / une remise B2B.
+- "particulier" sinon (vente directe boutique/marché).
+
+Règles pour "service_suggere" par ligne (à partir de la désignation du produit) :
+- "charcuterie" : tout produit de porc transformé (rôti, saucisson, jambon, terrine, pâté, rillettes, tomme, caussenard, fromages).
+- "cuisine" : plats préparés, salades composées, plateaux, traiteur cuisiné (taboulé, lentilles, salade de pommes de terre, plats chauds).
+- "boutique" : produits vendus en l'état pour la vente directe (jus de fruits, conserves, produits d'épicerie).
+- "commande" : si aucune des catégories précédentes ne correspond clairement, ou produit générique/transversal.
+
 Si une information manque, mets null. Les nombres doivent être des numbers, pas des strings.`;
 
     const body = {
@@ -42,7 +70,7 @@ Si une information manque, mets null. Les nombres doivent être des numbers, pas
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Extrais les données de ce devis IsaFact.' },
+            { type: 'text', text: 'Extrais les données de ce devis IsaFact et propose un service par ligne.' },
             {
               type: 'file',
               file: {
