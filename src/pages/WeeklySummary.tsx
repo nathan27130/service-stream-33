@@ -8,18 +8,24 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, ChevronRight, CalendarRange, Loader2 } from "lucide-react";
 
-interface AggregatedLine {
+interface RawItem {
+  productName: string;
+  unit: string;
+  quantity: number;
+}
+
+interface ProductGroup {
   productName: string;
   unit: string;
   totalQuantity: number;
-  orderCount: number;
+  items: RawItem[];
 }
 
 interface ServiceGroup {
   serviceId: string;
   serviceName: string;
   serviceType: string;
-  lines: AggregatedLine[];
+  groups: ProductGroup[];
 }
 
 const SERVICE_COLORS: Record<string, string> = {
@@ -46,6 +52,48 @@ const normalizeUnit = (unit: string) => {
     ? "unité"
     : value;
 };
+
+function formatQty(q: number) {
+  return q % 1 === 0 ? String(q) : q.toFixed(2);
+}
+
+function ProductTable({ groups }: { groups: ProductGroup[] }) {
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-[1fr_120px_120px] gap-2 text-xs text-muted-foreground border-b border-border pb-1 mb-1">
+        <span>Produit</span>
+        <span className="text-right">Qté</span>
+        <span className="text-right">Total</span>
+      </div>
+      <div className="space-y-0">
+        {groups.map((group) => (
+          <div key={`${group.productName}-${group.unit}`}>
+            {group.items.map((item, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-[1fr_120px_120px] gap-2 py-1 border-b border-border/30 last:border-0 items-center"
+              >
+                <span className="text-foreground truncate" title={item.productName}>
+                  {idx === 0 ? item.productName : ""}
+                </span>
+                <span className="text-right text-foreground">
+                  {formatQty(item.quantity)} {item.unit}
+                </span>
+                {idx === group.items.length - 1 ? (
+                  <span className="text-right font-bold text-primary">
+                    {formatQty(group.totalQuantity)} {group.unit}
+                  </span>
+                ) : (
+                  <span />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const WeeklySummary = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -87,36 +135,34 @@ const WeeklySummary = () => {
       const result: ServiceGroup[] = (services || []).map((service) => {
         const serviceOrders = (orders || []).filter((o: any) => o.service_id === service.id);
 
-        // Cumule les quantités par (nom de produit normalisé + unité normalisée),
-        // pour qu'une commande de 60 et une commande de 40 du même produit
-        // donnent bien 100 au total.
-        const lineMap = new Map<string, AggregatedLine>();
+        const map = new Map<string, ProductGroup>();
         for (const order of serviceOrders) {
           for (const item of order.order_items || []) {
             const unit = (item.unit || "unité").trim();
             const key = `${normalizeProductName(item.product_name)}__${normalizeUnit(unit)}`;
-            const existing = lineMap.get(key);
+            const existing = map.get(key);
+            const qty = Number(item.quantity) || 0;
             if (existing) {
-              existing.totalQuantity += Number(item.quantity) || 0;
-              existing.orderCount += 1;
+              existing.totalQuantity += qty;
+              existing.items.push({ productName: item.product_name, unit, quantity: qty });
             } else {
-              lineMap.set(key, {
+              map.set(key, {
                 productName: item.product_name,
                 unit,
-                totalQuantity: Number(item.quantity) || 0,
-                orderCount: 1,
+                totalQuantity: qty,
+                items: [{ productName: item.product_name, unit, quantity: qty }],
               });
             }
           }
         }
 
-        const lines = Array.from(lineMap.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
+        const groups = Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
 
         return {
           serviceId: service.id,
           serviceName: service.name,
           serviceType: service.type,
-          lines,
+          groups,
         };
       });
 
@@ -128,19 +174,19 @@ const WeeklySummary = () => {
     }
   };
 
-  const totalLinesAcrossServices = groups.reduce((sum, g) => sum + g.lines.length, 0);
+  const totalGroupsAcrossServices = groups.reduce((sum, g) => sum + g.groups.length, 0);
 
-  const globalSummary = useMemo(() => {
-    const map = new Map<string, AggregatedLine>();
+  const globalGroups = useMemo(() => {
+    const map = new Map<string, ProductGroup>();
     for (const group of groups) {
-      for (const line of group.lines) {
-        const key = `${normalizeProductName(line.productName)}__${normalizeUnit(line.unit)}`;
+      for (const product of group.groups) {
+        const key = `${normalizeProductName(product.productName)}__${normalizeUnit(product.unit)}`;
         const existing = map.get(key);
         if (existing) {
-          existing.totalQuantity += line.totalQuantity;
-          existing.orderCount += line.orderCount;
+          existing.totalQuantity += product.totalQuantity;
+          existing.items.push(...product.items);
         } else {
-          map.set(key, { ...line });
+          map.set(key, { ...product, items: [...product.items] });
         }
       }
     }
@@ -175,7 +221,7 @@ const WeeklySummary = () => {
           <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Chargement…
           </div>
-        ) : totalLinesAcrossServices === 0 ? (
+        ) : totalGroupsAcrossServices === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               Aucune commande avec des produits sur cette semaine.
@@ -190,31 +236,14 @@ const WeeklySummary = () => {
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-xl">{group.serviceName}</CardTitle>
                     <Badge variant="outline" className={SERVICE_COLORS[group.serviceType] || ""}>
-                      {group.lines.length} produit{group.lines.length > 1 ? "s" : ""}
+                      {group.groups.length} produit{group.groups.length > 1 ? "s" : ""}
                     </Badge>
                   </CardHeader>
                   <CardContent>
-                    {group.lines.length === 0 ? (
+                    {group.groups.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Rien à préparer cette semaine.</p>
                     ) : (
-                      <ul className="space-y-2">
-                        {group.lines.map((line) => (
-                          <li
-                            key={`${line.productName}-${line.unit}`}
-                            className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0"
-                          >
-                            <span className="text-foreground">{line.productName}</span>
-                            <span className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">
-                                {line.totalQuantity % 1 === 0 ? line.totalQuantity : line.totalQuantity.toFixed(2)} {line.unit}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                ({line.orderCount} cmd{line.orderCount > 1 ? "s" : ""})
-                              </span>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <ProductTable groups={group.groups} />
                     )}
                   </CardContent>
                 </Card>
@@ -226,28 +255,11 @@ const WeeklySummary = () => {
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-xl">Cumul global — total à produire</CardTitle>
                 <Badge variant="outline">
-                  {globalSummary.length} produit{globalSummary.length > 1 ? "s" : ""}
+                  {globalGroups.length} produit{globalGroups.length > 1 ? "s" : ""}
                 </Badge>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {globalSummary.map((line) => (
-                    <li
-                      key={`global-${line.productName}-${line.unit}`}
-                      className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0"
-                    >
-                      <span className="text-foreground">{line.productName}</span>
-                      <span className="flex items-center gap-2">
-                        <span className="font-bold text-lg text-primary">
-                          {line.totalQuantity % 1 === 0 ? line.totalQuantity : line.totalQuantity.toFixed(2)} {line.unit}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          ({line.orderCount} cmd{line.orderCount > 1 ? "s" : ""})
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <ProductTable groups={globalGroups} />
               </CardContent>
             </Card>
           </div>
