@@ -360,7 +360,12 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
             ) : (
               <Select value={customerId} onValueChange={setCustomerId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez un client" />
+                  <SelectValue placeholder="Sélectionnez un client">
+                    {(() => {
+                      const c = customers.find((c: any) => c.id === customerId);
+                      return c ? `${c.name}${c.phone ? ` (${c.phone})` : ""}` : undefined;
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {customers.map((customer) => (
@@ -379,7 +384,17 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
               <Label>Service *</Label>
               <Select value={serviceId} onValueChange={setServiceId} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez un service" />
+                  <SelectValue placeholder="Sélectionnez un service">
+                    {(() => {
+                      const s = services.find((s: any) => s.id === serviceId);
+                      return s ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                          {s.name}
+                        </div>
+                      ) : undefined;
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((service) => (
