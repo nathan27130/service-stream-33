@@ -204,69 +204,77 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
       // Combine date and time
       const dueAt = new Date(`${dueDate}T${dueTime}`);
 
-      // Create order
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert([{
-          customer_id: finalCustomerId || null,
-          service_id: serviceId,
-          type,
-          due_at: dueAt.toISOString(),
-          location,
-          address: address || null,
-          status,
-          priority,
-          notes: notes || null
-        }])
-        .select()
-        .single();
+      const orderPayload = {
+        customer_id: finalCustomerId || null,
+        service_id: serviceId,
+        type,
+        due_at: dueAt.toISOString(),
+        location,
+        address: address || null,
+        status,
+        priority,
+        notes: notes || null,
+      };
 
-      if (orderError) throw orderError;
+      let orderId: string;
+      if (editOrder) {
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update(orderPayload)
+          .eq("id", editOrder.id);
+        if (updateError) throw updateError;
+        orderId = editOrder.id;
+      } else {
+        const { data: orderData, error: orderError } = await supabase
+          .from("orders")
+          .insert([orderPayload])
+          .select()
+          .single();
+        if (orderError) throw orderError;
+        orderId = orderData.id;
+      }
 
       // Create order items and add new products to catalog
       const validItems = orderItems.filter(item => item.product_name);
-      if (validItems.length > 0) {
-        // First, add any new products to the products catalog
-        for (const item of validItems) {
-          const productExists = products.some(
-            p => p.name.toLowerCase() === item.product_name.toLowerCase()
-          );
-          
-          if (!productExists) {
-            const { error: productError } = await supabase
-              .from("products")
-              .insert([{
-                name: item.product_name,
-                unit: item.unit,
-                active: true
-              }]);
-            
-            if (productError) {
-              console.error("Error creating product:", productError);
-              // Continue anyway, don't block the order creation
-            } else {
-              console.log(`New product added to catalog: ${item.product_name}`);
-            }
-          }
-        }
 
-        // Then create the order items
+      // Add any new products to catalog
+      for (const item of validItems) {
+        const productExists = products.some(
+          p => p.name.toLowerCase() === item.product_name.toLowerCase()
+        );
+        if (!productExists) {
+          const { error: productError } = await supabase
+            .from("products")
+            .insert([{ name: item.product_name, unit: item.unit, active: true }]);
+          if (productError) console.error("Error creating product:", productError);
+        }
+      }
+
+      // For edits, replace existing items
+      if (editOrder) {
+        const { error: delError } = await supabase
+          .from("order_items")
+          .delete()
+          .eq("order_id", orderId);
+        if (delError) throw delError;
+      }
+
+      if (validItems.length > 0) {
         const itemsToInsert = validItems.map(item => ({
-          order_id: orderData.id,
+          order_id: orderId,
           product_name: item.product_name,
           quantity: item.quantity,
           unit: item.unit,
-          comment: item.comment || null
+          comment: item.comment || null,
         }));
-
         const { error: itemsError } = await supabase
           .from("order_items")
           .insert(itemsToInsert);
-
         if (itemsError) throw itemsError;
       }
 
-      toast.success("Commande créée avec succès ! Les nouveaux produits ont été ajoutés au catalogue.");
+      toast.success(editOrder ? "Commande mise à jour" : "Commande créée avec succès !");
+
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
