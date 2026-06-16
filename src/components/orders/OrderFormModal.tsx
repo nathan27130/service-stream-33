@@ -99,6 +99,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
       setTemplates(templatesData.data || []);
 
       if (editOrder) {
+        console.log("[OrderFormModal] populating", { customer_id: editOrder.customer_id, service_id: editOrder.service_id, customersCount: customersList.length, servicesCount: servicesList.length, customerInList: customersList.some((c:any)=>c.id===editOrder.customer_id), serviceInList: servicesList.some((s:any)=>s.id===editOrder.service_id) });
         setShowNewCustomer(false);
         setCustomerId(editOrder.customer_id || "");
         setServiceId(editOrder.service_id || "");
