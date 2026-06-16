@@ -149,7 +149,11 @@ const OrdersTable = ({ orders, onRefresh, onEdit }: OrdersTableProps) => {
     return type === "produit_simple" ? "Produit" : "Traiteur";
   };
 
-  const services = [...new Set(orders.map(o => o.services).filter(Boolean))];
+  const services = Array.from(
+    new Map(
+      orders.map((o) => o.services).filter(Boolean).map((s: any) => [s.id, s])
+    ).values()
+  );
 
   return (
     <div className="space-y-4">
