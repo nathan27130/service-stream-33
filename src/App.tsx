@@ -16,6 +16,7 @@ import PrintOrder from "./pages/PrintOrder";
 import PrintPlanning from "./pages/PrintPlanning";
 import NotFound from "./pages/NotFound";
 import QuoteImport from "./pages/QuoteImport";
+import WeeklySummary from "./pages/WeeklySummary";
 
 const queryClient = new QueryClient();
 
