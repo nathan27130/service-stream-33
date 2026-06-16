@@ -74,7 +74,7 @@ function ProductTable({ groups }: { groups: ProductGroup[] }) {
                 className="grid grid-cols-[1fr_120px_120px] gap-2 py-1 border-b border-border/30 last:border-0 items-center"
               >
                 <span className="text-foreground truncate" title={item.productName}>
-                  {idx === 0 ? item.productName : ""}
+                  {item.productName}
                 </span>
                 <span className="text-right text-foreground">
                   {formatQty(item.quantity)} {item.unit}
