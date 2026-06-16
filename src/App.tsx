@@ -16,6 +16,7 @@ import PrintOrder from "./pages/PrintOrder";
 import PrintPlanning from "./pages/PrintPlanning";
 import NotFound from "./pages/NotFound";
 import QuoteImport from "./pages/QuoteImport";
+import WeeklySummary from "./pages/WeeklySummary";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["admin", "service"]}>
                   <QuoteImport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/weekly-summary"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "service"]}>
+                  <WeeklySummary />
                 </ProtectedRoute>
               }
             />
