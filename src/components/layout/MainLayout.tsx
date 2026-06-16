@@ -11,7 +11,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  Upload
+  Upload,
+  CalendarRange
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { path: "/", icon: LayoutDashboard, label: "Tableau de bord", roles: ["admin", "service", "readonly"] },
     { path: "/orders", icon: ClipboardList, label: "Commandes", roles: ["admin", "service"] },
     { path: "/quote-import", icon: Upload, label: "Importer un devis", roles: ["admin", "service"] },
+    { path: "/weekly-summary", icon: CalendarRange, label: "Synthèse hebdomadaire", roles: ["admin", "service"] },
     { path: "/calendar", icon: Calendar, label: "Agenda", roles: ["admin", "service"] },
     { path: "/management", icon: BarChart3, label: "Gestion", roles: ["admin"] },
     { path: "/products", icon: Package, label: "Produits", roles: ["admin"] },

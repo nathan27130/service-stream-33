@@ -102,6 +102,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/weekly-summary"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "service"]}>
+                  <WeeklySummary />
+                </ProtectedRoute>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
