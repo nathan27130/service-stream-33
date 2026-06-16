@@ -175,31 +175,7 @@ const WeeklySummary = () => {
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-xl">Cumul global</CardTitle>
                 <Badge variant="outline">
-                  {globalSummary.length} produit{globalSummary.length > 1 ? "s" : ""}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {globalSummary.map((line) => (
-                    <li
-                      key={`global-${line.productName}-${line.unit}`}
-                      className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0"
-                    >
-                      <span className="text-foreground">{line.productName}</span>
-                      <span className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">
-                          {line.totalQuantity % 1 === 0 ? line.totalQuantity : line.totalQuantity.toFixed(2)} {line.unit}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          ({line.orderCount} cmd{line.orderCount > 1 ? "s" : ""})
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
+          <div className="space-y-6">
             {/* Détail par service */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {groups.map((group) => (
@@ -237,6 +213,36 @@ const WeeklySummary = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Cumul global (en dessous) */}
+            <Card className="border-primary/30">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-xl">Cumul global — total à produire</CardTitle>
+                <Badge variant="outline">
+                  {globalSummary.length} produit{globalSummary.length > 1 ? "s" : ""}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {globalSummary.map((line) => (
+                    <li
+                      key={`global-${line.productName}-${line.unit}`}
+                      className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0"
+                    >
+                      <span className="text-foreground">{line.productName}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-bold text-lg text-primary">
+                          {line.totalQuantity % 1 === 0 ? line.totalQuantity : line.totalQuantity.toFixed(2)} {line.unit}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({line.orderCount} cmd{line.orderCount > 1 ? "s" : ""})
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
