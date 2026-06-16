@@ -10,7 +10,8 @@ import {
   Package,
   BarChart3,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Upload
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -48,6 +49,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const navItems = [
     { path: "/", icon: LayoutDashboard, label: "Tableau de bord", roles: ["admin", "service", "readonly"] },
     { path: "/orders", icon: ClipboardList, label: "Commandes", roles: ["admin", "service"] },
+    { path: "/quote-import", icon: Upload, label: "Importer un devis", roles: ["admin", "service"] },
     { path: "/calendar", icon: Calendar, label: "Agenda", roles: ["admin", "service"] },
     { path: "/management", icon: BarChart3, label: "Gestion", roles: ["admin"] },
     { path: "/products", icon: Package, label: "Produits", roles: ["admin"] },
