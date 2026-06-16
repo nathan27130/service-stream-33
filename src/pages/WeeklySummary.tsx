@@ -29,6 +29,24 @@ const SERVICE_COLORS: Record<string, string> = {
   boutique: "bg-boutique/10 text-boutique border-boutique/30",
 };
 
+const normalizeText = (s: string) =>
+  (s || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+
+const normalizeProductName = (name: string) =>
+  normalizeText(name).replace(/\s*\((pce|piece|pieces|unite|unites)\)\s*$/i, "");
+
+const normalizeUnit = (unit: string) => {
+  const value = normalizeText(unit || "unité").replace(/\./g, "");
+  return ["pce", "piece", "pieces", "la piece", "unite", "unites", "unit"].includes(value)
+    ? "unité"
+    : value;
+};
+
 const WeeklySummary = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -66,9 +84,6 @@ const WeeklySummary = () => {
         .neq("status", "annule");
       if (ordersError) throw ordersError;
 
-      const normalize = (s: string) =>
-        (s || "").trim().toLowerCase().replace(/\s+/g, " ");
-
       const result: ServiceGroup[] = (services || []).map((service) => {
         const serviceOrders = (orders || []).filter((o: any) => o.service_id === service.id);
 
@@ -79,7 +94,7 @@ const WeeklySummary = () => {
         for (const order of serviceOrders) {
           for (const item of order.order_items || []) {
             const unit = (item.unit || "unité").trim();
-            const key = `${normalize(item.product_name)}__${normalize(unit)}`;
+            const key = `${normalizeProductName(item.product_name)}__${normalizeUnit(unit)}`;
             const existing = lineMap.get(key);
             if (existing) {
               existing.totalQuantity += Number(item.quantity) || 0;
@@ -116,12 +131,10 @@ const WeeklySummary = () => {
   const totalLinesAcrossServices = groups.reduce((sum, g) => sum + g.lines.length, 0);
 
   const globalSummary = useMemo(() => {
-    const normalize = (s: string) =>
-      (s || "").trim().toLowerCase().replace(/\s+/g, " ");
     const map = new Map<string, AggregatedLine>();
     for (const group of groups) {
       for (const line of group.lines) {
-        const key = `${normalize(line.productName)}__${normalize(line.unit)}`;
+        const key = `${normalizeProductName(line.productName)}__${normalizeUnit(line.unit)}`;
         const existing = map.get(key);
         if (existing) {
           existing.totalQuantity += line.totalQuantity;
