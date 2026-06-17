@@ -150,7 +150,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
   };
 
   const addOrderItem = () => {
-    setOrderItems([...orderItems, { product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+    setOrderItems([...orderItems, { product_name: "", quantity: 1, unit: "unité", comment: "", service_id: serviceId || undefined }]);
   };
 
   const removeOrderItem = (index: number) => {
@@ -174,6 +174,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         quantity: item.quantity || 1,
         unit: item.unit || "unité",
         comment: item.comment || "",
+        service_id: template.default_service_id || serviceId || undefined,
       })));
     }
 
