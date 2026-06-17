@@ -41,7 +41,7 @@ Tu reçois un PDF de devis et tu retournes UNIQUEMENT un JSON valide (pas de mar
       "unite": string|null,
       "prix_unitaire_ttc": number,
       "total_ttc": number,
-      "service_suggere": "cuisine" | "charcuterie" | "commande" | "boutique"
+      "service_suggere": "cuisine" | "charcuterie" | "commande" | "boutique" | "logistique"
     }
   ],
   "total_ht": number|null,
@@ -56,6 +56,7 @@ Règles pour "customer_type" :
 - "particulier" sinon (vente directe boutique/marché).
 
 Règles pour "service_suggere" par ligne (à partir de la désignation du produit) :
+- "logistique" : tout ce qui n'est PAS un produit consommable mais du matériel/service logistique : location de vaisselle, location de verres/assiettes/couverts, location de nappes, location de mobilier (tables, chaises, mange-debout), location de matériel (four, plancha, percolateur), transport, livraison facturée, mise à disposition, installation, montage/démontage, frais de service, personnel (serveur, maître d'hôtel).
 - "charcuterie" : tout produit de porc transformé (rôti, saucisson, jambon, terrine, pâté, rillettes, tomme, caussenard, fromages).
 - "cuisine" : plats préparés, salades composées, plateaux, traiteur cuisiné (taboulé, lentilles, salade de pommes de terre, plats chauds).
 - "boutique" : produits vendus en l'état pour la vente directe (jus de fruits, conserves, produits d'épicerie).
