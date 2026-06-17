@@ -415,7 +415,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
           {/* Order Details */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Service *</Label>
+              <Label>Service par défaut *</Label>
               <Select
                 key={`service-${services.length}-${serviceId}`}
                 value={serviceId}
