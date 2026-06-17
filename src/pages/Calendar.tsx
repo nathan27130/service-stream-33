@@ -37,9 +37,10 @@ const Calendar = () => {
 
     if (data && data.length > 0) {
       setServices(data);
-      setSelectedService(data[0].id);
+      setSelectedService("all");
     }
   };
+
 
   const goToToday = () => {
     setSelectedDate(new Date());
