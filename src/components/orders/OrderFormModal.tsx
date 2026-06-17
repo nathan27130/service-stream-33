@@ -569,11 +569,16 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
                 Ajouter un produit
               </Button>
             </div>
+            {!editOrder && (
+              <p className="text-xs text-muted-foreground">
+                Choisis le service associé à chaque ligne. Si plusieurs services sont sélectionnés, une commande sera créée par service.
+              </p>
+            )}
 
             <div className="space-y-3">
               {orderItems.map((item, index) => (
                 <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded-lg">
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <Label className="text-xs">Produit</Label>
                     <Input
                       list={`products-${index}`}
@@ -599,12 +604,35 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
                     />
                   </div>
 
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <Label className="text-xs">Unité</Label>
                     <Input
                       value={item.unit}
                       onChange={(e) => updateOrderItem(index, "unit", e.target.value)}
                     />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label className="text-xs">Service</Label>
+                    <Select
+                      value={item.service_id || serviceId || ""}
+                      onValueChange={(v) => updateOrderItem(index, "service_id", v)}
+                      disabled={!!editOrder}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Service" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: service.color }} />
+                              {service.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="col-span-3">
