@@ -122,10 +122,11 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
               quantity: Number(i.quantity) || 1,
               unit: i.unit || "unité",
               comment: i.comment || "",
+              service_id: editOrder.service_id || undefined,
             }))
           );
         } else {
-          setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+          setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "", service_id: editOrder.service_id || undefined }]);
         }
       } else {
         resetForm();
