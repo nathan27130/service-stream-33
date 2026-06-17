@@ -6,7 +6,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
-  serviceType?: "cuisine" | "charcuterie" | "commande" | "boutique";
+  serviceType?: "cuisine" | "charcuterie" | "commande" | "boutique" | "logistique";
   trend?: {
     value: number;
     isPositive: boolean;
@@ -19,6 +19,7 @@ const StatCard = ({ title, value, icon: Icon, serviceType, trend }: StatCardProp
     charcuterie: "bg-charcuterie text-charcuterie-foreground",
     commande: "bg-commande text-commande-foreground",
     boutique: "bg-boutique text-boutique-foreground",
+    logistique: "bg-logistique text-logistique-foreground",
   };
 
   return (
