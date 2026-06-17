@@ -250,12 +250,22 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
                           className={`p-1 cursor-pointer hover:shadow-sm transition-all text-[10px] border-l-2 ${getStatusColor(order.status)}`}
                         >
                           <div className="space-y-0.5">
-                            <div className="font-semibold truncate">
-                              {format(new Date(order.due_at), "HH:mm")}
+                            <div className="flex items-center gap-1">
+                              {serviceId === "all" && order.services && (
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: order.services.color }}
+                                  title={order.services.name}
+                                />
+                              )}
+                              <div className="font-semibold truncate">
+                                {format(new Date(order.due_at), "HH:mm")}
+                              </div>
                             </div>
                             <div className="truncate text-muted-foreground">
                               {order.customers?.name || "Sans client"}
                             </div>
+
                             {order.priority === "haute" && (
                               <Badge variant="destructive" className="text-[8px] px-0.5 py-0">
                                 !
