@@ -26,7 +26,6 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
   useEffect(() => {
     loadOrders();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('calendar-week-updates')
       .on(
@@ -35,7 +34,7 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
           event: '*',
           schema: 'public',
           table: 'orders',
-          filter: `service_id=eq.${serviceId}`
+          ...(serviceId !== "all" ? { filter: `service_id=eq.${serviceId}` } : {})
         },
         () => {
           loadOrders();
@@ -52,17 +51,23 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
     const start = startOfWeek(selectedDate, { locale: fr });
     const end = endOfWeek(selectedDate, { locale: fr });
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("orders")
       .select(`
         *,
         customers(*),
-        order_items(product_name, quantity)
+        order_items(product_name, quantity),
+        services(name, color)
       `)
-      .eq("service_id", serviceId)
       .gte("due_at", start.toISOString())
       .lte("due_at", end.toISOString())
       .order("due_at");
+
+    if (serviceId !== "all") {
+      query = query.eq("service_id", serviceId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error loading orders:", error);
@@ -71,6 +76,7 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
 
     setOrders(data || []);
   };
+
 
   const getRemainingCountForDay = (day: Date) => {
     const dayOrders = orders.filter(order => {
