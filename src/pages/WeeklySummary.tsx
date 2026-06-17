@@ -33,6 +33,7 @@ const SERVICE_COLORS: Record<string, string> = {
   charcuterie: "bg-charcuterie/10 text-charcuterie border-charcuterie/30",
   commande: "bg-commande/10 text-commande border-commande/30",
   boutique: "bg-boutique/10 text-boutique border-boutique/30",
+  logistique: "bg-logistique/10 text-logistique border-logistique/30",
 };
 
 const normalizeText = (s: string) =>
