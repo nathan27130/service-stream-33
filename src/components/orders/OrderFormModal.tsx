@@ -21,6 +21,7 @@ interface OrderItem {
   quantity: number;
   unit: string;
   comment: string;
+  service_id?: string;
 }
 
 interface OrderFormModalProps {
@@ -121,10 +122,11 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
               quantity: Number(i.quantity) || 1,
               unit: i.unit || "unité",
               comment: i.comment || "",
+              service_id: editOrder.service_id || undefined,
             }))
           );
         } else {
-          setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+          setOrderItems([{ product_name: "", quantity: 1, unit: "unité", comment: "", service_id: editOrder.service_id || undefined }]);
         }
       } else {
         resetForm();
@@ -149,7 +151,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
   };
 
   const addOrderItem = () => {
-    setOrderItems([...orderItems, { product_name: "", quantity: 1, unit: "unité", comment: "" }]);
+    setOrderItems([...orderItems, { product_name: "", quantity: 1, unit: "unité", comment: "", service_id: serviceId || undefined }]);
   };
 
   const removeOrderItem = (index: number) => {
@@ -173,6 +175,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         quantity: item.quantity || 1,
         unit: item.unit || "unité",
         comment: item.comment || "",
+        service_id: template.default_service_id || serviceId || undefined,
       })));
     }
 
@@ -219,9 +222,8 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
       // Combine date and time
       const dueAt = new Date(`${dueDate}T${dueTime}`);
 
-      const orderPayload = {
+      const basePayload = {
         customer_id: finalCustomerId || null,
-        service_id: serviceId,
         type,
         due_at: dueAt.toISOString(),
         location,
@@ -231,25 +233,6 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         notes: notes || null,
       };
 
-      let orderId: string;
-      if (editOrder) {
-        const { error: updateError } = await supabase
-          .from("orders")
-          .update(orderPayload)
-          .eq("id", editOrder.id);
-        if (updateError) throw updateError;
-        orderId = editOrder.id;
-      } else {
-        const { data: orderData, error: orderError } = await supabase
-          .from("orders")
-          .insert([orderPayload])
-          .select()
-          .single();
-        if (orderError) throw orderError;
-        orderId = orderData.id;
-      }
-
-      // Create order items and add new products to catalog
       const validItems = orderItems.filter(item => item.product_name);
 
       // Add any new products to catalog
@@ -265,30 +248,82 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         }
       }
 
-      // For edits, replace existing items
       if (editOrder) {
+        // Edit mode: keep single order, ignore per-line service overrides
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({ ...basePayload, service_id: serviceId })
+          .eq("id", editOrder.id);
+        if (updateError) throw updateError;
+
         const { error: delError } = await supabase
           .from("order_items")
           .delete()
-          .eq("order_id", orderId);
+          .eq("order_id", editOrder.id);
         if (delError) throw delError;
+
+        if (validItems.length > 0) {
+          const itemsToInsert = validItems.map(item => ({
+            order_id: editOrder.id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit: item.unit,
+            comment: item.comment || null,
+          }));
+          const { error: itemsError } = await supabase
+            .from("order_items")
+            .insert(itemsToInsert);
+          if (itemsError) throw itemsError;
+        }
+
+        toast.success("Commande mise à jour");
+      } else {
+        // Create mode: group items by per-line service, create one order per service
+        const grouped = new Map<string, OrderItem[]>();
+        for (const item of validItems) {
+          const sid = item.service_id || serviceId;
+          if (!grouped.has(sid)) grouped.set(sid, []);
+          grouped.get(sid)!.push(item);
+        }
+
+        // If no items, still create an empty order on the main service
+        if (grouped.size === 0) {
+          grouped.set(serviceId, []);
+        }
+
+        let createdCount = 0;
+        for (const [sid, items] of grouped.entries()) {
+          const { data: orderData, error: orderError } = await supabase
+            .from("orders")
+            .insert([{ ...basePayload, service_id: sid }])
+            .select()
+            .single();
+          if (orderError) throw orderError;
+
+          if (items.length > 0) {
+            const itemsToInsert = items.map(item => ({
+              order_id: orderData.id,
+              product_name: item.product_name,
+              quantity: item.quantity,
+              unit: item.unit,
+              comment: item.comment || null,
+            }));
+            const { error: itemsError } = await supabase
+              .from("order_items")
+              .insert(itemsToInsert);
+            if (itemsError) throw itemsError;
+          }
+          createdCount++;
+        }
+
+        toast.success(
+          createdCount > 1
+            ? `${createdCount} commandes créées et dispatchées par service`
+            : "Commande créée avec succès !"
+        );
       }
 
-      if (validItems.length > 0) {
-        const itemsToInsert = validItems.map(item => ({
-          order_id: orderId,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          unit: item.unit,
-          comment: item.comment || null,
-        }));
-        const { error: itemsError } = await supabase
-          .from("order_items")
-          .insert(itemsToInsert);
-        if (itemsError) throw itemsError;
-      }
 
-      toast.success(editOrder ? "Commande mise à jour" : "Commande créée avec succès !");
 
       onSuccess();
       onOpenChange(false);
@@ -380,7 +415,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
           {/* Order Details */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Service *</Label>
+              <Label>Service par défaut *</Label>
               <Select
                 key={`service-${services.length}-${serviceId}`}
                 value={serviceId}
@@ -534,11 +569,16 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
                 Ajouter un produit
               </Button>
             </div>
+            {!editOrder && (
+              <p className="text-xs text-muted-foreground">
+                Choisis le service associé à chaque ligne. Si plusieurs services sont sélectionnés, une commande sera créée par service.
+              </p>
+            )}
 
             <div className="space-y-3">
               {orderItems.map((item, index) => (
                 <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded-lg">
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <Label className="text-xs">Produit</Label>
                     <Input
                       list={`products-${index}`}
@@ -564,12 +604,35 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
                     />
                   </div>
 
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <Label className="text-xs">Unité</Label>
                     <Input
                       value={item.unit}
                       onChange={(e) => updateOrderItem(index, "unit", e.target.value)}
                     />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label className="text-xs">Service</Label>
+                    <Select
+                      value={item.service_id || serviceId || ""}
+                      onValueChange={(v) => updateOrderItem(index, "service_id", v)}
+                      disabled={!!editOrder}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Service" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: service.color }} />
+                              {service.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="col-span-3">
