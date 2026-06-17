@@ -27,7 +27,7 @@ interface ExtractedLine {
   unite: string | null;
   prix_unitaire_ttc: number;
   total_ttc: number;
-  service_suggere: "cuisine" | "charcuterie" | "commande" | "boutique";
+  service_suggere: "cuisine" | "charcuterie" | "commande" | "boutique" | "logistique";
 }
 
 interface ExtractedData {
