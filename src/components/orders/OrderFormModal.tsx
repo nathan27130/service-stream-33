@@ -222,9 +222,8 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
       // Combine date and time
       const dueAt = new Date(`${dueDate}T${dueTime}`);
 
-      const orderPayload = {
+      const basePayload = {
         customer_id: finalCustomerId || null,
-        service_id: serviceId,
         type,
         due_at: dueAt.toISOString(),
         location,
@@ -234,25 +233,6 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         notes: notes || null,
       };
 
-      let orderId: string;
-      if (editOrder) {
-        const { error: updateError } = await supabase
-          .from("orders")
-          .update(orderPayload)
-          .eq("id", editOrder.id);
-        if (updateError) throw updateError;
-        orderId = editOrder.id;
-      } else {
-        const { data: orderData, error: orderError } = await supabase
-          .from("orders")
-          .insert([orderPayload])
-          .select()
-          .single();
-        if (orderError) throw orderError;
-        orderId = orderData.id;
-      }
-
-      // Create order items and add new products to catalog
       const validItems = orderItems.filter(item => item.product_name);
 
       // Add any new products to catalog
@@ -268,27 +248,79 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         }
       }
 
-      // For edits, replace existing items
       if (editOrder) {
+        // Edit mode: keep single order, ignore per-line service overrides
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({ ...basePayload, service_id: serviceId })
+          .eq("id", editOrder.id);
+        if (updateError) throw updateError;
+
         const { error: delError } = await supabase
           .from("order_items")
           .delete()
-          .eq("order_id", orderId);
+          .eq("order_id", editOrder.id);
         if (delError) throw delError;
-      }
 
-      if (validItems.length > 0) {
-        const itemsToInsert = validItems.map(item => ({
-          order_id: orderId,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          unit: item.unit,
-          comment: item.comment || null,
-        }));
-        const { error: itemsError } = await supabase
-          .from("order_items")
-          .insert(itemsToInsert);
-        if (itemsError) throw itemsError;
+        if (validItems.length > 0) {
+          const itemsToInsert = validItems.map(item => ({
+            order_id: editOrder.id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit: item.unit,
+            comment: item.comment || null,
+          }));
+          const { error: itemsError } = await supabase
+            .from("order_items")
+            .insert(itemsToInsert);
+          if (itemsError) throw itemsError;
+        }
+
+        toast.success("Commande mise à jour");
+      } else {
+        // Create mode: group items by per-line service, create one order per service
+        const grouped = new Map<string, OrderItem[]>();
+        for (const item of validItems) {
+          const sid = item.service_id || serviceId;
+          if (!grouped.has(sid)) grouped.set(sid, []);
+          grouped.get(sid)!.push(item);
+        }
+
+        // If no items, still create an empty order on the main service
+        if (grouped.size === 0) {
+          grouped.set(serviceId, []);
+        }
+
+        let createdCount = 0;
+        for (const [sid, items] of grouped.entries()) {
+          const { data: orderData, error: orderError } = await supabase
+            .from("orders")
+            .insert([{ ...basePayload, service_id: sid }])
+            .select()
+            .single();
+          if (orderError) throw orderError;
+
+          if (items.length > 0) {
+            const itemsToInsert = items.map(item => ({
+              order_id: orderData.id,
+              product_name: item.product_name,
+              quantity: item.quantity,
+              unit: item.unit,
+              comment: item.comment || null,
+            }));
+            const { error: itemsError } = await supabase
+              .from("order_items")
+              .insert(itemsToInsert);
+            if (itemsError) throw itemsError;
+          }
+          createdCount++;
+        }
+
+        toast.success(
+          createdCount > 1
+            ? `${createdCount} commandes créées et dispatchées par service`
+            : "Commande créée avec succès !"
+        );
       }
 
       toast.success(editOrder ? "Commande mise à jour" : "Commande créée avec succès !");
