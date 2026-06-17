@@ -55,6 +55,10 @@ All colors MUST be HSL.
     --boutique-foreground: 0 0% 98%;
     --boutique-light: 280 54% 90%;
 
+    --logistique: 28 80% 52%;
+    --logistique-foreground: 0 0% 98%;
+    --logistique-light: 28 80% 90%;
+
     /* Status colors */
     --status-a-faire: 220 10% 60%;
     --status-en-cours: 35 90% 55%;
