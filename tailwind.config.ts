@@ -67,6 +67,11 @@ export default {
           foreground: "hsl(var(--boutique-foreground))",
           light: "hsl(var(--boutique-light))",
         },
+        logistique: {
+          DEFAULT: "hsl(var(--logistique))",
+          foreground: "hsl(var(--logistique-foreground))",
+          light: "hsl(var(--logistique-light))",
+        },
       },
       boxShadow: {
         'sm': 'var(--shadow-sm)',
