@@ -256,6 +256,7 @@ const ServicesManager = () => {
                   <SelectItem value="charcuterie">Charcuterie</SelectItem>
                   <SelectItem value="commande">Commande</SelectItem>
                   <SelectItem value="boutique">Boutique</SelectItem>
+                  <SelectItem value="logistique">Logistique</SelectItem>
                 </SelectContent>
               </Select>
             </div>
