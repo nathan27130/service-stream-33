@@ -48,7 +48,7 @@ const ServicesManager = () => {
   const [formData, setFormData] = useState({
     name: "",
     color: "#3b82f6",
-    type: "cuisine" as "cuisine" | "charcuterie" | "commande" | "boutique",
+    type: "cuisine" as "cuisine" | "charcuterie" | "commande" | "boutique" | "logistique",
     active: true,
   });
 
