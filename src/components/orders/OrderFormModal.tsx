@@ -323,7 +323,7 @@ const OrderFormModal = ({ open, onOpenChange, onSuccess, editOrder }: OrderFormM
         );
       }
 
-      toast.success(editOrder ? "Commande mise à jour" : "Commande créée avec succès !");
+
 
       onSuccess();
       onOpenChange(false);
