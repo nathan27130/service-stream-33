@@ -114,6 +114,7 @@ All colors MUST be HSL.
     --charcuterie: 5 67% 58%;
     --commande: 148 55% 52%;
     --boutique: 280 54% 57%;
+    --logistique: 28 80% 60%;
 
     /* Adjust shadows for dark mode */
     --shadow-sm: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
