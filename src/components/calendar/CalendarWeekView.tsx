@@ -235,8 +235,17 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
                         className={`p-2 cursor-pointer hover:shadow-md transition-all text-xs border-l-2 ${getStatusColor(order.status)}`}
                       >
                         <div className="space-y-1">
-                          <div className="font-semibold truncate">
-                            {format(new Date(order.due_at), "HH:mm")}
+                          <div className="flex items-center gap-1">
+                            {serviceId === "all" && order.services && (
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: order.services.color }}
+                                title={order.services.name}
+                              />
+                            )}
+                            <div className="font-semibold truncate">
+                              {format(new Date(order.due_at), "HH:mm")}
+                            </div>
                           </div>
                           <div className="truncate">
                             {order.customers?.name || "Sans client"}
@@ -244,6 +253,7 @@ const CalendarWeekView = ({ serviceId, selectedDate, onDateChange }: CalendarWee
                           <div className="text-muted-foreground truncate">
                             {itemsSummary}{moreItems}
                           </div>
+
                           {order.priority === "haute" && (
                             <Badge variant="destructive" className="text-[10px] px-1 py-0">
                               !
