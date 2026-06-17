@@ -226,6 +226,7 @@ export default function QuoteImport() {
     charcuterie: "Charcuterie",
     commande: "Commande",
     boutique: "Boutique",
+    logistique: "Logistique",
   };
 
   return (
