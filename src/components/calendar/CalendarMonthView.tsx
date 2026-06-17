@@ -37,7 +37,6 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
   useEffect(() => {
     loadOrders();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('calendar-month-updates')
       .on(
@@ -46,7 +45,7 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
           event: '*',
           schema: 'public',
           table: 'orders',
-          filter: `service_id=eq.${serviceId}`
+          ...(serviceId !== "all" ? { filter: `service_id=eq.${serviceId}` } : {})
         },
         () => {
           loadOrders();
@@ -63,17 +62,23 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
     const start = startOfWeek(startOfMonth(selectedDate), { locale: fr });
     const end = endOfWeek(endOfMonth(selectedDate), { locale: fr });
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("orders")
       .select(`
         *,
         customers(*),
-        order_items(product_name, quantity)
+        order_items(product_name, quantity),
+        services(name, color)
       `)
-      .eq("service_id", serviceId)
       .gte("due_at", start.toISOString())
       .lte("due_at", end.toISOString())
       .order("due_at");
+
+    if (serviceId !== "all") {
+      query = query.eq("service_id", serviceId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error loading orders:", error);
@@ -82,6 +87,7 @@ const CalendarMonthView = ({ serviceId, selectedDate, onDateChange }: CalendarMo
 
     setOrders(data || []);
   };
+
 
   const getRemainingCountForDay = (day: Date) => {
     const dayOrders = orders.filter(order => {
