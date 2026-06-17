@@ -231,11 +231,19 @@ const CalendarDayView = ({ serviceId, selectedDate, onDateChange }: CalendarDayV
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
+                            {serviceId === "all" && order.services && (
+                              <span
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: order.services.color }}
+                                title={order.services.name}
+                              />
+                            )}
                             <span className="font-semibold truncate">
                               {order.customers?.name || "Sans client"}
                             </span>
                             <OrderStatusBadge status={order.status} />
                           </div>
+
                           <p className="text-sm text-muted-foreground truncate">
                             {itemsSummary}{moreItems}
                           </p>
