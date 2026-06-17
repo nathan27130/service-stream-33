@@ -362,7 +362,12 @@ export type Database = {
       order_priority: "basse" | "normale" | "haute"
       order_status: "a_faire" | "en_cours" | "pret" | "livre" | "annule"
       order_type: "produit_simple" | "traiteur"
-      service_type: "cuisine" | "charcuterie" | "commande" | "boutique"
+      service_type:
+        | "cuisine"
+        | "charcuterie"
+        | "commande"
+        | "boutique"
+        | "logistique"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -496,7 +501,13 @@ export const Constants = {
       order_priority: ["basse", "normale", "haute"],
       order_status: ["a_faire", "en_cours", "pret", "livre", "annule"],
       order_type: ["produit_simple", "traiteur"],
-      service_type: ["cuisine", "charcuterie", "commande", "boutique"],
+      service_type: [
+        "cuisine",
+        "charcuterie",
+        "commande",
+        "boutique",
+        "logistique",
+      ],
     },
   },
 } as const

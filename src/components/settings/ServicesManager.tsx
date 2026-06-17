@@ -48,7 +48,7 @@ const ServicesManager = () => {
   const [formData, setFormData] = useState({
     name: "",
     color: "#3b82f6",
-    type: "cuisine" as "cuisine" | "charcuterie" | "commande" | "boutique",
+    type: "cuisine" as "cuisine" | "charcuterie" | "commande" | "boutique" | "logistique",
     active: true,
   });
 
@@ -256,6 +256,7 @@ const ServicesManager = () => {
                   <SelectItem value="charcuterie">Charcuterie</SelectItem>
                   <SelectItem value="commande">Commande</SelectItem>
                   <SelectItem value="boutique">Boutique</SelectItem>
+                  <SelectItem value="logistique">Logistique</SelectItem>
                 </SelectContent>
               </Select>
             </div>
