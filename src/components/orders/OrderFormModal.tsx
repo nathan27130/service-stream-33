@@ -21,6 +21,7 @@ interface OrderItem {
   quantity: number;
   unit: string;
   comment: string;
+  service_id?: string;
 }
 
 interface OrderFormModalProps {
